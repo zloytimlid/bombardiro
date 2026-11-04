@@ -1,0 +1,1870 @@
+{
+    "$id": "https://lil-critter.test/schemas/aircraft.schema.json",
+    "title": "B-25J aircraft config",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "config_version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+        },
+        "airframe": {
+            "type": "object",
+            "properties": {
+                "serial": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "required": [
+                "serial",
+                "code",
+                "name",
+                "unit",
+                "source"
+            ],
+            "additionalProperties": false
+        },
+        "geometry": {
+            "type": "object",
+            "properties": {
+                "length_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "wingspan_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "height_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "wing_area_m2": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "airfoil_root": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "string"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "airfoil_tip": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "string"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "mean_chord_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "engine_arm_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "pilot_eye_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "array",
+                            "prefixItems": [
+                                {
+                                    "type": "number"
+                                },
+                                {
+                                    "type": "number"
+                                },
+                                {
+                                    "type": "number"
+                                }
+                            ],
+                            "items": false,
+                            "minItems": 3,
+                            "maxItems": 3
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "length_m",
+                "wingspan_m",
+                "height_m",
+                "wing_area_m2",
+                "airfoil_root",
+                "airfoil_tip",
+                "mean_chord_m",
+                "engine_arm_m",
+                "pilot_eye_m"
+            ],
+            "additionalProperties": false
+        },
+        "mass": {
+            "type": "object",
+            "properties": {
+                "empty_kg": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "max_takeoff_kg": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "inertia_kgm2": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "object",
+                            "properties": {
+                                "ixx": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "iyy": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "izz": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                }
+                            },
+                            "required": [
+                                "ixx",
+                                "iyy",
+                                "izz"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "cg_empty_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "crew_member_kg": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "empty_kg",
+                "max_takeoff_kg",
+                "inertia_kgm2",
+                "cg_empty_m",
+                "crew_member_kg"
+            ],
+            "additionalProperties": false
+        },
+        "performance_targets": {
+            "type": "object",
+            "properties": {
+                "max_speed_kmh": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        },
+                        "at_altitude_m": {
+                            "type": "number"
+                        },
+                        "tolerance": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source",
+                        "at_altitude_m",
+                        "tolerance"
+                    ],
+                    "additionalProperties": false
+                },
+                "cruise_speed_kmh": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        },
+                        "tolerance": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source",
+                        "tolerance"
+                    ],
+                    "additionalProperties": false
+                },
+                "range_km": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        },
+                        "tolerance": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source",
+                        "tolerance"
+                    ],
+                    "additionalProperties": false
+                },
+                "service_ceiling_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        },
+                        "tolerance": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source",
+                        "tolerance"
+                    ],
+                    "additionalProperties": false
+                },
+                "climb_rate_ms": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "stall_speed_kmh": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "reference_mass_kg": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "cruise_setting": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "object",
+                            "properties": {
+                                "altitude_m": {
+                                    "type": "number"
+                                },
+                                "throttle": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                },
+                                "rpm": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                }
+                            },
+                            "required": [
+                                "altitude_m",
+                                "throttle",
+                                "rpm"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "max_speed_kmh",
+                "cruise_speed_kmh",
+                "range_km",
+                "service_ceiling_m",
+                "climb_rate_ms",
+                "stall_speed_kmh",
+                "reference_mass_kg",
+                "cruise_setting"
+            ],
+            "additionalProperties": false
+        },
+        "engines": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "number",
+                    "const": 2
+                },
+                "model": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "string"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "rated_power_hp": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "supercharger_stages": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "power_curve": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "object",
+                            "properties": {
+                                "mp_rated_inhg": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "mp_idle_inhg": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "rpm_rated": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "rpm_idle": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "rpm_min_governed": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "full_throttle_mp_inhg": {
+                                    "minItems": 2,
+                                    "type": "array",
+                                    "items": {
+                                        "type": "array",
+                                        "prefixItems": [
+                                            {
+                                                "type": "number"
+                                            },
+                                            {
+                                                "type": "number"
+                                            }
+                                        ],
+                                        "items": false,
+                                        "minItems": 2,
+                                        "maxItems": 2
+                                    }
+                                },
+                                "bsfc_kg_per_kwh": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "spool_tau_s": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "cht_tau_s": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "cht_heat_c": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "cowl_cooling": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                }
+                            },
+                            "required": [
+                                "mp_rated_inhg",
+                                "mp_idle_inhg",
+                                "rpm_rated",
+                                "rpm_idle",
+                                "rpm_min_governed",
+                                "full_throttle_mp_inhg",
+                                "bsfc_kg_per_kwh",
+                                "spool_tau_s",
+                                "cht_tau_s",
+                                "cht_heat_c",
+                                "cowl_cooling"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "limits": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "gameplay_limits": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "object",
+                            "properties": {
+                                "mp_max_inhg": {
+                                    "type": "number"
+                                },
+                                "rpm_max": {
+                                    "type": "number"
+                                },
+                                "cht_max_c": {
+                                    "type": "number"
+                                },
+                                "overboost_wear_per_s": {
+                                    "type": "number"
+                                },
+                                "overheat_wear_per_s": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": [
+                                "mp_max_inhg",
+                                "rpm_max",
+                                "cht_max_c",
+                                "overboost_wear_per_s",
+                                "overheat_wear_per_s"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "count",
+                "model",
+                "rated_power_hp",
+                "supercharger_stages",
+                "power_curve",
+                "limits",
+                "gameplay_limits"
+            ],
+            "additionalProperties": false
+        },
+        "propellers": {
+            "type": "object",
+            "properties": {
+                "diameter_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "blades": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "type": {
+                    "type": "string",
+                    "const": "constant_speed_feathering"
+                },
+                "gameplay_model": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "object",
+                            "properties": {
+                                "eta_max": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 1
+                                },
+                                "v0_ms": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "windmill_drag_n_per_pa": {
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "feathered_drag_factor": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1
+                                },
+                                "governor_tau_s": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                }
+                            },
+                            "required": [
+                                "eta_max",
+                                "v0_ms",
+                                "windmill_drag_n_per_pa",
+                                "feathered_drag_factor",
+                                "governor_tau_s"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "diameter_m",
+                "blades",
+                "type",
+                "gameplay_model"
+            ],
+            "additionalProperties": false
+        },
+        "fuel": {
+            "type": "object",
+            "properties": {
+                "tanks": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "self_sealing": {
+                    "type": "boolean"
+                },
+                "gameplay_tanks": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "capacity_kg": {
+                                        "type": "number",
+                                        "exclusiveMinimum": 0
+                                    },
+                                    "x_m": {
+                                        "type": "number"
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "capacity_kg",
+                                    "x_m"
+                                ],
+                                "additionalProperties": false
+                            }
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "tanks",
+                "self_sealing",
+                "gameplay_tanks"
+            ],
+            "additionalProperties": false
+        },
+        "aero": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "type": "string",
+                    "const": "calibrated"
+                },
+                "cl0": {
+                    "type": "number"
+                },
+                "cl_alpha_per_rad": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "cl_max": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "cl_flaps_delta": {
+                    "type": "number"
+                },
+                "cl_post_stall_slope_per_rad": {
+                    "type": "number"
+                },
+                "cd0": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "k_induced": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "cd_gear": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cd_bay_doors": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cd_flaps": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cd_stall_per_rad": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cy_beta": {
+                    "type": "number"
+                },
+                "cy_rudder": {
+                    "type": "number"
+                },
+                "cm0": {
+                    "type": "number"
+                },
+                "cm_alpha": {
+                    "type": "number",
+                    "exclusiveMaximum": 0
+                },
+                "cm_q": {
+                    "type": "number",
+                    "exclusiveMaximum": 0
+                },
+                "cm_elevator": {
+                    "type": "number",
+                    "exclusiveMaximum": 0
+                },
+                "cm_flaps": {
+                    "type": "number"
+                },
+                "cl_beta": {
+                    "type": "number"
+                },
+                "cl_p": {
+                    "type": "number",
+                    "exclusiveMaximum": 0
+                },
+                "cl_r": {
+                    "type": "number"
+                },
+                "cl_aileron": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "cl_stall_asymmetry": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "cn_beta": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "cn_r": {
+                    "type": "number",
+                    "exclusiveMaximum": 0
+                },
+                "cn_p": {
+                    "type": "number"
+                },
+                "cn_rudder": {
+                    "type": "number",
+                    "exclusiveMaximum": 0
+                },
+                "cn_aileron": {
+                    "type": "number"
+                },
+                "elevator_max_rad": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "aileron_max_rad": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "rudder_max_rad": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "trim_max": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1
+                },
+                "ground_effect_span_factor": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            },
+            "required": [
+                "source",
+                "cl0",
+                "cl_alpha_per_rad",
+                "cl_max",
+                "cl_flaps_delta",
+                "cl_post_stall_slope_per_rad",
+                "cd0",
+                "k_induced",
+                "cd_gear",
+                "cd_bay_doors",
+                "cd_flaps",
+                "cd_stall_per_rad",
+                "cy_beta",
+                "cy_rudder",
+                "cm0",
+                "cm_alpha",
+                "cm_q",
+                "cm_elevator",
+                "cm_flaps",
+                "cl_beta",
+                "cl_p",
+                "cl_r",
+                "cl_aileron",
+                "cl_stall_asymmetry",
+                "cn_beta",
+                "cn_r",
+                "cn_p",
+                "cn_rudder",
+                "cn_aileron",
+                "elevator_max_rad",
+                "aileron_max_rad",
+                "rudder_max_rad",
+                "trim_max",
+                "ground_effect_span_factor"
+            ],
+            "additionalProperties": false
+        },
+        "gear": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "type": "string",
+                    "const": "calibrated"
+                },
+                "nose_wheel_steering": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "gameplay_nose_wheel": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "object",
+                            "properties": {
+                                "max_deg": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "fade_speed_ms": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                }
+                            },
+                            "required": [
+                                "max_deg",
+                                "fade_speed_ms"
+                            ],
+                            "additionalProperties": false
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "retract_time_s": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "points": {
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "r_m": {
+                                "type": "array",
+                                "prefixItems": [
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "number"
+                                    }
+                                ],
+                                "items": false,
+                                "minItems": 3,
+                                "maxItems": 3
+                            },
+                            "spring_n_per_m": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "damper_n_s_per_m": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "max_compression_m": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "steerable": {
+                                "type": "boolean"
+                            },
+                            "brake": {
+                                "anyOf": [
+                                    {
+                                        "type": "string",
+                                        "enum": [
+                                            "left",
+                                            "right"
+                                        ]
+                                    },
+                                    {
+                                        "type": "null"
+                                    }
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "r_m",
+                            "spring_n_per_m",
+                            "damper_n_s_per_m",
+                            "max_compression_m",
+                            "steerable",
+                            "brake"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "belly_points": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "r_m": {
+                                "type": "array",
+                                "prefixItems": [
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "number"
+                                    }
+                                ],
+                                "items": false,
+                                "minItems": 3,
+                                "maxItems": 3
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "r_m"
+                        ],
+                        "additionalProperties": false
+                    }
+                },
+                "mu_roll": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "mu_brake": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "mu_lateral": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "mu_belly": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "crash_vertical_speed_ms": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
+            },
+            "required": [
+                "source",
+                "nose_wheel_steering",
+                "gameplay_nose_wheel",
+                "retract_time_s",
+                "points",
+                "belly_points",
+                "mu_roll",
+                "mu_brake",
+                "mu_lateral",
+                "mu_belly",
+                "crash_vertical_speed_ms"
+            ],
+            "additionalProperties": false
+        },
+        "bomb_bay": {
+            "type": "object",
+            "properties": {
+                "max_load_kg": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                },
+                "allowed": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stations": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "null"
+                        },
+                        "todo": {
+                            "type": "string",
+                            "pattern": "TODO\\(history\\)"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "todo"
+                    ],
+                    "additionalProperties": false
+                },
+                "gameplay_x_m": {
+                    "type": "object",
+                    "properties": {
+                        "value": {
+                            "type": "number"
+                        },
+                        "source": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "confidence": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                            ]
+                        },
+                        "note": {
+                            "type": "string"
+                        },
+                        "todo": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "value",
+                        "source"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "max_load_kg",
+                "allowed",
+                "stations",
+                "gameplay_x_m"
+            ],
+            "additionalProperties": false
+        },
+        "stations": {
+            "minItems": 8,
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "guns": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "weapon": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                    },
+                    "mount": {
+                        "type": "string",
+                        "enum": [
+                            "fixed",
+                            "flexible",
+                            "turret"
+                        ]
+                    },
+                    "station": {
+                        "type": "string"
+                    },
+                    "removable": {
+                        "type": "boolean"
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "todo": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "weapon",
+                    "count",
+                    "mount",
+                    "station"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "arcs": {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "null"
+                },
+                "todo": {
+                    "type": "string",
+                    "pattern": "TODO\\(history\\)"
+                }
+            },
+            "required": [
+                "value",
+                "todo"
+            ],
+            "additionalProperties": false
+        },
+        "sources": {
+            "type": "object",
+            "propertyNames": {
+                "type": "string"
+            },
+            "additionalProperties": {
+                "type": "string",
+                "format": "uri"
+            }
+        }
+    },
+    "required": [
+        "id",
+        "config_version",
+        "airframe",
+        "geometry",
+        "mass",
+        "performance_targets",
+        "engines",
+        "propellers",
+        "fuel",
+        "aero",
+        "gear",
+        "bomb_bay",
+        "stations",
+        "guns",
+        "arcs",
+        "sources"
+    ],
+    "additionalProperties": false
+}

@@ -1,7 +1,7 @@
 # Lil Critter from the Moon
 
 Браузерный кооперативный симулятор экипажа B-25J (43-4064, 8U, 488th BS / 340th BG, Алезани, 1944).
-Спецификация — PDF ТЗ в корне репозитория. Текущий этап — **0 (каркас)**.
+Спецификация — PDF ТЗ (в репозиторий не входит). Готовы этапы **0 (каркас)** и **1 (симядро и полёт пилота)**.
 
 ## Стек
 
@@ -34,6 +34,11 @@ docker compose exec app php artisan migrate --seed
 Вход в `/admin` — только роль admin с подтверждённой 2FA (настраивается в «Settings → Security»).
 
 Проверка связи Reverb: `/diagnostics/realtime` в двух браузерах.
+
+Тренировка пилота: «Кабинет → Тренировка: пилот» (`/training/pilot`). Кнопка «ИИ-пилот» показывает
+взлёт, круг и посадку; `?difficulty=historical` — без дублей приборов и внешнего вида.
+После правки `resources/sim/*.json`: `docker compose exec app php artisan sim:sync`,
+после правки схемы конфига в `config.ts`: `npm run schemas:generate`.
 
 ## Проверки
 

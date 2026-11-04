@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { useI18n } from '@/composables/useI18n';
 import { dashboard } from '@/routes';
 import { realtime } from '@/routes/diagnostics';
+import { show as training } from '@/routes/training';
 
 type PilotProfile = {
     callsign: string;
@@ -40,6 +41,14 @@ const { t } = useI18n();
                 {{ t('dashboard.missions_total', { count: profile.missionsTotal }) }}
             </p>
         </section>
+
+        <Link
+            :href="training('pilot')"
+            class="self-start rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
+            data-test="training-pilot"
+        >
+            {{ t('dashboard.training_pilot') }}
+        </Link>
 
         <Link
             :href="realtime()"

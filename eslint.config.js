@@ -73,6 +73,8 @@ export default tseslint.config(
     {
         // Симядро: чистый TypeScript без DOM, Three.js, сети и game/* (раздел 1, правило 4; раздел 5).
         files: ['resources/js/sim/core/**/*.ts'],
+        // Тесты ядра могут мерить время и читать файлы — ограничения только для кода ядра.
+        ignores: ['resources/js/sim/core/**/*.test.ts'],
         languageOptions: { globals: {} },
         rules: {
             'no-restricted-imports': [

@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Diagnostics\RealtimeCheckController;
+use App\Http\Controllers\TrainingController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('training/{station}', [TrainingController::class, 'show'])->name('training.show');
 
     Route::get('diagnostics/realtime', [RealtimeCheckController::class, 'show'])
         ->name('diagnostics.realtime');

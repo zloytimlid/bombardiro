@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Aircraft\Actions\SyncSimContent;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -13,10 +14,12 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Тестовые пользователи (раздел 10). Театр, B-25J и миссии добавляются сидерами этапов 1–2.
+     * Театр, B-25J и тестовые пользователи (раздел 10). Миссии добавляются на этапе 2.
      */
-    public function run(): void
+    public function run(SyncSimContent $syncSimContent): void
     {
+        $syncSimContent->handle();
+
         $configuredPassword = config('admin.seed_password');
         $adminPassword = is_string($configuredPassword) && $configuredPassword !== '' ? $configuredPassword : Str::password(20);
 

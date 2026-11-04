@@ -1,0 +1,191 @@
+{
+    "id": "b25j",
+    "config_version": 1,
+    "airframe": {
+        "serial": "43-4064",
+        "code": "8U",
+        "name": "Lil Critter from the Moon",
+        "unit": "488th BS, 340th BG",
+        "source": "aam-43-4064"
+    },
+    "geometry": {
+        "length_m": { "value": 16.13, "source": "wiki-b25", "confidence": "medium" },
+        "wingspan_m": { "value": 20.6, "source": "wiki-b25", "confidence": "medium" },
+        "height_m": { "value": 4.98, "source": "wiki-b25", "confidence": "medium" },
+        "wing_area_m2": { "value": 57.4, "source": "wiki-b25", "confidence": "medium" },
+        "airfoil_root": { "value": "NACA 23017", "source": "wiki-b25", "confidence": "high" },
+        "airfoil_tip": { "value": "NACA 4409-R", "source": "wiki-b25", "confidence": "high" },
+        "mean_chord_m": { "value": 2.79, "source": "calibrated", "note": "S / b" },
+        "engine_arm_m": { "value": 2.97, "source": "calibrated", "todo": "TODO(history): поперечное расстояние до оси двигателя" },
+        "pilot_eye_m": { "value": [4.6, -0.45, -0.55], "source": "gameplay", "note": "точка глаз пилота в осях FRD от ЦМ" }
+    },
+    "mass": {
+        "empty_kg": { "value": 8836, "source": "wiki-b25", "confidence": "medium" },
+        "max_takeoff_kg": { "value": 15876, "source": "wiki-b25", "confidence": "medium" },
+        "inertia_kgm2": {
+            "value": { "ixx": 100000, "iyy": 140000, "izz": 220000 },
+            "source": "calibrated",
+            "note": "оценка по геометрии и распределению масс (радиусы инерции 0.25 b/2, 0.38 L/2, 0.48 (b+L)/4)"
+        },
+        "cg_empty_m": { "value": null, "todo": "TODO(history)" },
+        "crew_member_kg": { "value": 90, "source": "gameplay" }
+    },
+    "performance_targets": {
+        "max_speed_kmh": { "value": 438, "at_altitude_m": 3960, "tolerance": 0.05, "source": "wiki-b25" },
+        "cruise_speed_kmh": { "value": 370, "tolerance": 0.05, "source": "wiki-b25" },
+        "range_km": { "value": 2170, "tolerance": 0.1, "source": "wiki-b25" },
+        "service_ceiling_m": { "value": 7380, "tolerance": 0.05, "source": "wiki-b25" },
+        "climb_rate_ms": { "value": null, "todo": "TODO(history)" },
+        "stall_speed_kmh": { "value": null, "todo": "TODO(history)" },
+        "reference_mass_kg": {
+            "value": 14500,
+            "source": "calibrated",
+            "todo": "TODO(history): масса, к которой относятся ТТХ"
+        },
+        "cruise_setting": {
+            "value": { "altitude_m": 3000, "throttle": 0.84, "rpm": 2300 },
+            "source": "calibrated",
+            "todo": "TODO(history): крейсерский режим по лётному руководству"
+        }
+    },
+    "engines": {
+        "count": 2,
+        "model": { "value": "Wright R-2600-92 Twin Cyclone", "source": "wiki-b25", "confidence": "high" },
+        "rated_power_hp": { "value": 1700, "source": "wiki-b25", "confidence": "high" },
+        "supercharger_stages": { "value": null, "todo": "TODO(history)" },
+        "power_curve": {
+            "source": "calibrated",
+            "todo": "мощность от наддува, оборотов и высоты; заменить таблицей лётного руководства",
+            "value": {
+                "mp_rated_inhg": 44,
+                "mp_idle_inhg": 12,
+                "rpm_rated": 2600,
+                "rpm_idle": 600,
+                "rpm_min_governed": 1200,
+                "full_throttle_mp_inhg": [
+                    [0, 44],
+                    [3960, 37.5],
+                    [5000, 37.5],
+                    [7380, 31.8],
+                    [9500, 24]
+                ],
+                "bsfc_kg_per_kwh": 0.3,
+                "spool_tau_s": 0.8,
+                "cht_tau_s": 90,
+                "cht_heat_c": 190,
+                "cowl_cooling": 0.35
+            }
+        },
+        "limits": { "value": null, "todo": "TODO(history): макс. наддув, обороты, температура головок" },
+        "gameplay_limits": {
+            "source": "gameplay",
+            "value": { "mp_max_inhg": 46, "rpm_max": 2700, "cht_max_c": 260, "overboost_wear_per_s": 0.004, "overheat_wear_per_s": 0.003 }
+        }
+    },
+    "propellers": {
+        "diameter_m": { "value": null, "todo": "TODO(history)" },
+        "blades": { "value": null, "todo": "TODO(history)" },
+        "type": "constant_speed_feathering",
+        "gameplay_model": {
+            "source": "calibrated",
+            "note": "T = η·P / sqrt(V² + V0²): статическая тяга без диаметра винта",
+            "value": { "eta_max": 0.85, "v0_ms": 50, "windmill_drag_n_per_pa": 0.9, "feathered_drag_factor": 0.08, "governor_tau_s": 0.6 }
+        }
+    },
+    "fuel": {
+        "tanks": { "value": null, "todo": "TODO(history): баки, ёмкости, положение" },
+        "self_sealing": true,
+        "gameplay_tanks": {
+            "source": "gameplay",
+            "todo": "TODO(history): заменить данными лётного руководства",
+            "value": [
+                { "id": "left_main", "capacity_kg": 850, "x_m": 0.2 },
+                { "id": "right_main", "capacity_kg": 850, "x_m": 0.2 },
+                { "id": "left_aux", "capacity_kg": 350, "x_m": -0.3 },
+                { "id": "right_aux", "capacity_kg": 350, "x_m": -0.3 }
+            ]
+        }
+    },
+    "aero": {
+        "source": "calibrated",
+        "cl0": 0.25,
+        "cl_alpha_per_rad": 5.0,
+        "cl_max": 1.45,
+        "cl_flaps_delta": 0.6,
+        "cl_post_stall_slope_per_rad": -2.5,
+        "cd0": 0.0305,
+        "k_induced": 0.0574,
+        "cd_gear": 0.015,
+        "cd_bay_doors": 0.008,
+        "cd_flaps": 0.04,
+        "cd_stall_per_rad": 1.2,
+        "cy_beta": -0.6,
+        "cy_rudder": 0.15,
+        "cm0": 0.05,
+        "cm_alpha": -1.0,
+        "cm_q": -15,
+        "cm_elevator": -1.4,
+        "cm_flaps": -0.1,
+        "cl_beta": -0.08,
+        "cl_p": -0.45,
+        "cl_r": 0.1,
+        "cl_aileron": 0.12,
+        "cl_stall_asymmetry": 0.04,
+        "cn_beta": 0.08,
+        "cn_r": -0.12,
+        "cn_p": -0.03,
+        "cn_rudder": -0.07,
+        "cn_aileron": -0.005,
+        "elevator_max_rad": 0.4,
+        "aileron_max_rad": 0.3,
+        "rudder_max_rad": 0.4,
+        "trim_max": 0.35,
+        "ground_effect_span_factor": 1.0
+    },
+    "gear": {
+        "source": "calibrated",
+        "nose_wheel_steering": { "value": null, "todo": "TODO(history)" },
+        "gameplay_nose_wheel": { "source": "gameplay", "value": { "max_deg": 30, "fade_speed_ms": 30 } },
+        "retract_time_s": 8,
+        "points": [
+            { "id": "nose", "r_m": [4.5, 0, 2.1], "spring_n_per_m": 180000, "damper_n_s_per_m": 22000, "max_compression_m": 0.35, "steerable": true, "brake": null },
+            { "id": "main_left", "r_m": [-0.45, -2.97, 2.1], "spring_n_per_m": 460000, "damper_n_s_per_m": 58000, "max_compression_m": 0.4, "steerable": false, "brake": "left" },
+            { "id": "main_right", "r_m": [-0.45, 2.97, 2.1], "spring_n_per_m": 460000, "damper_n_s_per_m": 58000, "max_compression_m": 0.4, "steerable": false, "brake": "right" }
+        ],
+        "belly_points": [
+            { "id": "belly_nose", "r_m": [5.5, 0, 1.1] },
+            { "id": "belly_mid", "r_m": [0, 0, 1.3] },
+            { "id": "belly_tail", "r_m": [-9.5, 0, 0.9] },
+            { "id": "wingtip_left", "r_m": [-0.5, -10.3, 0.6] },
+            { "id": "wingtip_right", "r_m": [-0.5, 10.3, 0.6] }
+        ],
+        "mu_roll": 0.025,
+        "mu_brake": 0.55,
+        "mu_lateral": 0.8,
+        "mu_belly": 0.45,
+        "crash_vertical_speed_ms": 6
+    },
+    "bomb_bay": {
+        "max_load_kg": { "value": 1360, "source": "wiki-b25", "confidence": "medium" },
+        "allowed": ["AN-M64", "AN-M65"],
+        "stations": { "value": null, "todo": "TODO(history): схема держателей" },
+        "gameplay_x_m": { "value": -0.5, "source": "gameplay" }
+    },
+    "stations": ["pilot", "copilot", "bombardier", "navigator", "top_gunner", "radio", "waist_gunner", "tail_gunner"],
+    "guns": [
+        { "id": "nose_flex", "weapon": "m2", "count": 1, "mount": "flexible", "station": "bombardier" },
+        { "id": "nose_fixed", "weapon": "m2", "count": 1, "mount": "fixed", "station": "pilot", "todo": "TODO(history): наличие на 43-4064" },
+        { "id": "package_left", "weapon": "m2", "count": 2, "mount": "fixed", "station": "pilot", "removable": true, "source": "wiki-b25" },
+        { "id": "package_right", "weapon": "m2", "count": 2, "mount": "fixed", "station": "pilot", "removable": true, "source": "wiki-b25" },
+        { "id": "top_turret", "weapon": "m2", "count": 2, "mount": "turret", "station": "top_gunner" },
+        { "id": "waist_left", "weapon": "m2", "count": 1, "mount": "flexible", "station": "radio" },
+        { "id": "waist_right", "weapon": "m2", "count": 1, "mount": "flexible", "station": "waist_gunner" },
+        { "id": "tail", "weapon": "m2", "count": 2, "mount": "flexible", "station": "tail_gunner" }
+    ],
+    "arcs": { "value": null, "todo": "TODO(history): сектора обстрела и скорости наведения по установкам" },
+    "sources": {
+        "wiki-b25": "https://en.wikipedia.org/wiki/North_American_B-25_Mitchell",
+        "aam-43-4064": "https://americanairmuseum.com/aircraft/23469",
+        "airhistory-43-4064": "https://airhistory.net/photo/134428/43-4064/34064"
+    }
+}
