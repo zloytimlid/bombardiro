@@ -1,0 +1,11 @@
+{
+    "identities": [
+        {
+            "name": "b25j-dev",
+            "credentials": [
+                { "accessKey": "b25j-dev", "secretKey": "b25j-dev-secret" }
+            ],
+            "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+        }
+    ]
+}

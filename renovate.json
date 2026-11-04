@@ -1,0 +1,17 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended", ":pinDevDependencies"],
+    "timezone": "Europe/Moscow",
+    "schedule": ["before 6am on monday"],
+    "packageRules": [
+        {
+            "description": "Мажорные обновления стека (раздел 4) — только вручную через ADR",
+            "matchUpdateTypes": ["major"],
+            "dependencyDashboardApproval": true
+        },
+        {
+            "matchManagers": ["github-actions"],
+            "pinDigests": true
+        }
+    ]
+}
