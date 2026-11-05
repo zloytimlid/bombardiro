@@ -412,5 +412,9 @@
     "intercom.distress_sent": "Сигнал бедствия передан.",
     "intercom.position_report": "Передал доклад о месте.",
     "intercom.returning": "Возвращаемся на базу.",
-    "hud.ai_my_seat": "ИИ на моём месте"
+    "hud.ai_my_seat": "ИИ на моём месте",
+    "menu.missions": "Миссии",
+    "menu.volume": "Громкость музыки",
+    "menu.next_track": "Следующий трек",
+    "menu.music_click": "музыка — после клика"
 }

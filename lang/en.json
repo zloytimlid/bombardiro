@@ -412,5 +412,9 @@
     "intercom.distress_sent": "Mayday sent.",
     "intercom.position_report": "Position report sent.",
     "intercom.returning": "We're turning back.",
-    "hud.ai_my_seat": "AI in my seat"
+    "hud.ai_my_seat": "AI in my seat",
+    "menu.missions": "Missions",
+    "menu.volume": "Music volume",
+    "menu.next_track": "Next track",
+    "menu.music_click": "music starts on click"
 }
