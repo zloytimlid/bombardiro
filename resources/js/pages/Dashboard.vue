@@ -3,7 +3,9 @@ import { Head, Link } from '@inertiajs/vue3';
 import { useI18n } from '@/composables/useI18n';
 import { dashboard } from '@/routes';
 import { realtime } from '@/routes/diagnostics';
+import { index as missions, solo } from '@/routes/missions';
 import { show as training } from '@/routes/training';
+
 
 type PilotProfile = {
     callsign: string;
@@ -23,6 +25,9 @@ defineOptions({
 });
 
 const { t } = useI18n();
+
+// Порядок станций = клавиши 1–8 (App\Domain\Aircraft\Enums\Station); без импорта симядра в главный бандл.
+const STATIONS = ['pilot', 'copilot', 'bombardier', 'navigator', 'top_gunner', 'radio', 'waist_gunner', 'tail_gunner'] as const;
 </script>
 
 <template>
@@ -42,13 +47,32 @@ const { t } = useI18n();
             </p>
         </section>
 
-        <Link
-            :href="training('pilot')"
-            class="self-start rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
-            data-test="training-pilot"
-        >
-            {{ t('dashboard.training_pilot') }}
-        </Link>
+        <section class="space-y-2">
+            <h3 class="font-semibold">{{ t('dashboard.sortie') }}</h3>
+            <div class="flex flex-wrap gap-2">
+                <Link :href="missions()" class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90" data-test="missions-link">
+                    {{ t('dashboard.missions') }}
+                </Link>
+                <Link :href="solo('milk-run')" class="rounded-md border px-4 py-2 text-sm hover:bg-muted" data-test="milk-run-link">
+                    {{ t('dashboard.milk_run') }}
+                </Link>
+            </div>
+        </section>
+
+        <section class="space-y-2">
+            <h3 class="font-semibold">{{ t('home.training') }}</h3>
+            <div class="flex flex-wrap gap-2">
+                <Link
+                    v-for="(s, i) in STATIONS"
+                    :key="s"
+                    :href="training(s)"
+                    class="rounded-md border px-3 py-1.5 text-sm hover:bg-muted"
+                    :data-test="`training-${s}`"
+                >
+                    {{ i + 1 }}. {{ t(`station.${s}`) }}
+                </Link>
+            </div>
+        </section>
 
         <Link
             :href="realtime()"

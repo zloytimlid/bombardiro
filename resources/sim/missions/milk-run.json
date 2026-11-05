@@ -1,0 +1,493 @@
+{
+    "$schema": "../schemas/mission.schema.json",
+    "id": "milk-run",
+    "version": 1,
+    "title": {
+        "ru": "Милк-ран",
+        "en": "Milk Run"
+    },
+    "historical_date": null,
+    "theatre": "corsica",
+    "seed": 1944,
+    "difficulty": "training",
+    "placeholder": true,
+    "todo": "TODO(history): обучающая миссия «по мотивам»; цель, маршрут, высоты и ПВО — правдоподобные значения до документов 340-й группы",
+    "weather": {
+        "clouds": [
+            {
+                "base_m": 1800,
+                "top_m": 2200,
+                "coverage": 0.3
+            }
+        ],
+        "visibility_m": 30000,
+        "wind": [
+            {
+                "altitude_m": 0,
+                "from_deg": 270,
+                "speed_ms": 4
+            },
+            {
+                "altitude_m": 3000,
+                "from_deg": 290,
+                "speed_ms": 9
+            }
+        ],
+        "turbulence_ms": 0.6
+    },
+    "time_of_day": "09:30",
+    "start": {
+        "runway": "36",
+        "engines_running": false
+    },
+    "waypoints": [
+        {
+            "id": "takeoff",
+            "type": "takeoff",
+            "lat": 42.2,
+            "lon": 9.5,
+            "alt_m": 15
+        },
+        {
+            "id": "formup",
+            "type": "formup",
+            "lat": 42.326612,
+            "lon": 9.572757,
+            "alt_m": 1200
+        },
+        {
+            "id": "wp1",
+            "type": "turn",
+            "lat": 42.471312,
+            "lon": 10.106308,
+            "alt_m": 3000
+        },
+        {
+            "id": "ip",
+            "type": "ip",
+            "lat": 42.489399,
+            "lon": 10.615606,
+            "alt_m": 3000
+        },
+        {
+            "id": "target",
+            "type": "target",
+            "lat": 42.435137,
+            "lon": 10.906634,
+            "alt_m": 3000
+        },
+        {
+            "id": "rally",
+            "type": "rally",
+            "lat": 42.236175,
+            "lon": 10.76112,
+            "alt_m": 2800
+        },
+        {
+            "id": "wp2",
+            "type": "turn",
+            "lat": 42.055301,
+            "lon": 9.985046,
+            "alt_m": 1500
+        },
+        {
+            "id": "initial",
+            "type": "initial_approach",
+            "lat": 42.064344,
+            "lon": 9.597009,
+            "alt_m": 700
+        },
+        {
+            "id": "final",
+            "type": "final",
+            "lat": 42.114085,
+            "lon": 9.5,
+            "alt_m": 480
+        },
+        {
+            "id": "base",
+            "type": "base",
+            "lat": 42.2,
+            "lon": 9.5,
+            "alt_m": 15
+        }
+    ],
+    "target": {
+        "id": "rail-bridge",
+        "type": "bridge",
+        "name": {
+            "ru": "Железнодорожный мост (условный)",
+            "en": "Railway bridge (notional)"
+        },
+        "aim_point": {
+            "lat": 42.435137,
+            "lon": 10.906634
+        },
+        "elevation_m": 20,
+        "heading_deg": 104,
+        "sections": [
+            {
+                "id": "span1",
+                "offset_m": [
+                    -60,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 8,
+                "strength": 1.0
+            },
+            {
+                "id": "span2",
+                "offset_m": [
+                    -20,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 8,
+                "strength": 1.0
+            },
+            {
+                "id": "span3",
+                "offset_m": [
+                    20,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 8,
+                "strength": 1.0
+            },
+            {
+                "id": "span4",
+                "offset_m": [
+                    60,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 8,
+                "strength": 1.0
+            }
+        ],
+        "destroyed_when": "any_section"
+    },
+    "alternate_targets": [],
+    "time_over_target": {
+        "at_s": 1460,
+        "window_s": 60
+    },
+    "formation": {
+        "wingmen": 2,
+        "spacing_m": 70
+    },
+    "loadout": {
+        "bombs": [
+            {
+                "type": "AN-M64",
+                "count": 4
+            }
+        ],
+        "fuel_kg": 1500,
+        "planned_burn_kg": 420
+    },
+    "threats": {
+        "flak": [
+            {
+                "id": "target-heavy",
+                "lat": 42.421571,
+                "lon": 10.924823,
+                "type": "heavy",
+                "elevation_m": 20,
+                "guns": 2,
+                "active": true,
+                "barrage": false
+            },
+            {
+                "id": "coast-light",
+                "lat": 42.44418,
+                "lon": 10.864192,
+                "type": "light",
+                "elevation_m": 10,
+                "guns": 2,
+                "active": true,
+                "barrage": false
+            }
+        ],
+        "fighter_waves": [
+            {
+                "id": "bf109-pair",
+                "type": "bf109g",
+                "count": 2,
+                "skill": "novice",
+                "spawn": {
+                    "bearing_deg": 150,
+                    "distance_m": 7000,
+                    "altitude_offset_m": 600
+                },
+                "attacks": [
+                    "high_six",
+                    "beam"
+                ]
+            }
+        ]
+    },
+    "radio": {
+        "frequencies_mhz": {
+            "tower": 4.12,
+            "command": 5.65,
+            "base": 6.84
+        },
+        "code_table": [
+            {
+                "group": "VX-17",
+                "meaning": "target_confirmed"
+            },
+            {
+                "group": "VX-42",
+                "meaning": "recall"
+            },
+            {
+                "group": "QR-05",
+                "meaning": "weather_clear"
+            },
+            {
+                "group": "QR-31",
+                "meaning": "weather_bad"
+            },
+            {
+                "group": "KF-88",
+                "meaning": "fighters_reported"
+            },
+            {
+                "group": "TL-62",
+                "meaning": "change_target"
+            },
+            {
+                "group": "TL-21",
+                "meaning": "iff_reminder"
+            },
+            {
+                "group": "AL-36",
+                "meaning": "landing_clearance"
+            }
+        ],
+        "beacon": {
+            "lat": 42.2,
+            "lon": 9.5
+        }
+    },
+    "radio_script": [
+        {
+            "id": "weather",
+            "channel": "command",
+            "group": "QR-05",
+            "meaning": "weather_clear",
+            "duration_s": 12,
+            "repeats": 2
+        },
+        {
+            "id": "confirm",
+            "channel": "base",
+            "group": "VX-17",
+            "meaning": "target_confirmed",
+            "duration_s": 12,
+            "repeats": 3
+        },
+        {
+            "id": "iff",
+            "channel": "base",
+            "group": "TL-21",
+            "meaning": "iff_reminder",
+            "duration_s": 10,
+            "repeats": 2
+        },
+        {
+            "id": "clearance",
+            "channel": "tower",
+            "group": "AL-36",
+            "meaning": "landing_clearance",
+            "duration_s": 10,
+            "repeats": 2
+        }
+    ],
+    "triggers": [
+        {
+            "id": "t-weather",
+            "once": true,
+            "when": {
+                "phase": "route",
+                "time_s": 420
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "weather"
+                }
+            ]
+        },
+        {
+            "id": "t-confirm",
+            "once": true,
+            "when": {
+                "near_waypoint": {
+                    "id": "wp1",
+                    "radius_m": 6000
+                }
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "confirm"
+                }
+            ]
+        },
+        {
+            "id": "t-intercept",
+            "once": true,
+            "when": {
+                "phase": "egress",
+                "probability": 0.25
+            },
+            "then": [
+                {
+                    "type": "spawn_wave",
+                    "wave": "bf109-pair"
+                }
+            ]
+        },
+        {
+            "id": "t-iff",
+            "once": true,
+            "when": {
+                "phase": "return",
+                "near_waypoint": {
+                    "id": "wp2",
+                    "radius_m": 20000
+                }
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "iff"
+                }
+            ]
+        },
+        {
+            "id": "t-clearance",
+            "once": true,
+            "when": {
+                "phase": "landing"
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "clearance"
+                }
+            ]
+        }
+    ],
+    "landmarks": [
+        {
+            "id": "corsica-coast-north",
+            "lat": 42.326612,
+            "lon": 9.560631,
+            "kind": "coast",
+            "name": {
+                "ru": "Восточный берег Корсики",
+                "en": "East coast of Corsica"
+            }
+        },
+        {
+            "id": "mainland-coast",
+            "lat": 42.471312,
+            "lon": 10.858129,
+            "kind": "coast",
+            "name": {
+                "ru": "Берег материка",
+                "en": "Mainland coast"
+            }
+        },
+        {
+            "id": "corsica-coast-south",
+            "lat": 42.064344,
+            "lon": 9.560631,
+            "kind": "coast",
+            "name": {
+                "ru": "Берег у Алезани",
+                "en": "Coast near Alesan"
+            }
+        }
+    ],
+    "objectives": [
+        {
+            "id": "o-target",
+            "type": "destroy_target"
+        },
+        {
+            "id": "o-return",
+            "type": "return_aircraft"
+        },
+        {
+            "id": "o-crew",
+            "type": "crew_survival"
+        },
+        {
+            "id": "o-time",
+            "type": "time_over_target"
+        }
+    ],
+    "scoring": {
+        "target": 0.45,
+        "aircraft": 0.25,
+        "crew": 0.2,
+        "timing": 0.1
+    },
+    "briefing": {
+        "general": {
+            "ru": "Учебный вылет «по мотивам» боевого пути 340-й группы. Взлёт с Алезани, сбор с двумя ведомыми, выход к условному железнодорожному мосту на побережье Италии, удар серией из четырёх AN-M64 с 3000 м, отход и возвращение. ПВО у цели слабая; возможен перехват парой истребителей на отходе.",
+            "en": "A training sortie loosely based on the 340th Group's record. Take off from Alesan, form up with two wingmen, proceed to a notional railway bridge on the Italian coast, drop a train of four AN-M64 from 3,000 m, break away and return. Flak at the target is light; a pair of fighters may intercept on the way out."
+        },
+        "roles": {
+            "pilot": {
+                "ru": "Курс и высоту держите по докладам штурмана. До IP — манёвр при обстреле, после IP — строго по PDI.",
+                "en": "Fly the navigator's headings. Weave under flak before the IP, then follow the PDI strictly."
+            },
+            "copilot": {
+                "ru": "Чек-листы, запуск двигателей, шасси и закрылки по команде. Следите за температурой головок.",
+                "en": "Checklists, engine start, gear and flaps on command. Watch cylinder-head temperatures."
+            },
+            "bombardier": {
+                "ru": "Точка прицеливания — середина моста. Серия 4 × AN-M64, интервал 120 мс, высота над целью около 2980 м.",
+                "en": "Aiming point: the middle of the bridge. Train of 4 × AN-M64, 120 ms interval, about 2,980 m above the target."
+            },
+            "navigator": {
+                "ru": "Маршрут: сбор → wp1 → IP → цель → сбор после удара → wp2 → заход. Время над целью: 24 мин 20 с ± 60 с.",
+                "en": "Route: form-up → wp1 → IP → target → rally → wp2 → approach. Time over target: 24 min 20 s ± 60 s."
+            },
+            "top_gunner": {
+                "ru": "Верхняя полусфера. Вы же бортинженер: пожары, перекачка топлива, аварийный выпуск шасси.",
+                "en": "Upper hemisphere. You are also the flight engineer: fires, fuel transfer, emergency gear."
+            },
+            "radio": {
+                "ru": "Командная частота 5,65 МГц, база 6,84 МГц, вышка 4,12 МГц. Кодовая таблица дня — во вкладке.",
+                "en": "Command 5.65 MHz, base 6.84 MHz, tower 4.12 MHz. Today's code table is in the tab."
+            },
+            "waist_gunner": {
+                "ru": "Правый борт. Первая помощь раненым; следите за двигателями снаружи.",
+                "en": "Right side. First aid for the wounded; watch the engines from outside."
+            },
+            "tail_gunner": {
+                "ru": "Задняя полусфера. После сброса доложите результат по разрывам.",
+                "en": "Rear hemisphere. Report the bomb results after the drop."
+            }
+        }
+    },
+    "sources": [
+        {
+            "title": "Wikipedia — 340th Bombardment Group",
+            "url": "https://en.wikipedia.org/wiki/340th_Bombardment_Group"
+        },
+        {
+            "title": "American Air Museum — B-25J 43-4064",
+            "url": "https://americanairmuseum.com/aircraft/23469"
+        }
+    ]
+}

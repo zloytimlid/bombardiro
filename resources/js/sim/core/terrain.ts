@@ -35,6 +35,8 @@ export const theatreSchema = z.object({
     /** Где начинаются горы на западе, м (отрицательный x). */
     mountains_start_m: z.number(),
     mountains_peak_m: z.number(),
+    /** Берег материка на востоке (Италия), м; null — только остров. */
+    mainland_coast_x_m: z.number().nullable().default(null),
     runways: z
         .array(
             z.object({
@@ -79,9 +81,27 @@ export class ProceduralTerrain implements Terrain {
         return this.theatre.coast_east_m + 900 * valueNoise2(this.theatre.seed, 0.37, y / 6000);
     }
 
+    private mainlandX(y: number): number {
+        const m = this.theatre.mainland_coast_x_m;
+
+        return m === null ? Infinity : m + 1500 * valueNoise2(this.theatre.seed + 9, 0.71, y / 9000);
+    }
+
     heightAt(x: number, y: number): number {
         const t = this.theatre;
         const coast = this.coastX(y);
+        const mainland = this.mainlandX(y);
+
+        if (x > mainland) {
+            // Материк: прибрежная равнина и холмы вглубь (заглушка до DEM).
+            const inland = x - mainland;
+
+            return (
+                8 * smoothstep(0, 1500, inland) +
+                220 * smoothstep(4000, 20000, inland) * (0.6 + 0.4 * valueNoise2(t.seed + 11, x / 3000, y / 3000)) +
+                25 * smoothstep(800, 3000, inland) * (0.5 + 0.5 * valueNoise2(t.seed + 12, x / 900, y / 900))
+            );
+        }
 
         if (x > coast) {
             return 0;
@@ -118,7 +138,7 @@ export class ProceduralTerrain implements Terrain {
     }
 
     isWater(x: number, y: number): boolean {
-        return x > this.coastX(y);
+        return x > this.coastX(y) && x <= this.mainlandX(y);
     }
 }
 

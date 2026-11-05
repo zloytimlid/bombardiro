@@ -1,0 +1,33 @@
+{
+    "id": "m2",
+    "name": "Browning AN/M2 .50",
+    "config_version": 1,
+    "caliber_mm": { "value": 12.7, "source": "wiki-m2", "confidence": "high" },
+    "rate_rpm": { "value": 800, "source": "wiki-m2", "confidence": "medium", "note": "для авиационного AN/M2 источники дают 750–850" },
+    "muzzle_velocity_ms": { "value": 887, "source": "wiki-50bmg", "confidence": "medium", "todo": "TODO(history): проверить по TM 9-225 для штатного патрона" },
+    "bullet_mass_kg": { "value": 0.0429, "source": "wiki-50bmg", "confidence": "medium" },
+    "ammo_per_gun": { "value": null, "todo": "TODO(history): боекомплект по установкам 43-4064" },
+    "gameplay": {
+        "source": "gameplay",
+        "note": "баллистика упрощена: dv/dt = -k·v², гравитация; перегрев и задержки — игровая модель",
+        "value": {
+            "ammo_per_gun": 400,
+            "drag_k_per_m": 0.00039,
+            "dispersion_mrad": 2.5,
+            "tracer_every": 5,
+            "lifetime_s": 2.0,
+            "effective_range_m": 900,
+            "heat_per_shot": 0.0125,
+            "cool_per_s": 0.09,
+            "overheat": 0.75,
+            "jam_chance_per_shot": 0.00004,
+            "jam_chance_per_shot_overheated": 0.004,
+            "clear_jam_hold_s": 1.5,
+            "damage_per_hit": 1.0
+        }
+    },
+    "sources": {
+        "wiki-m2": "https://en.wikipedia.org/wiki/M2_Browning",
+        "wiki-50bmg": "https://en.wikipedia.org/wiki/.50_BMG"
+    }
+}

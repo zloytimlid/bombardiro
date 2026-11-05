@@ -65,6 +65,23 @@ PostgreSQL 17. Публичные идентификаторы (экипажи, 
 
 Контент загружается `SyncSimContent` (сидер и `php artisan sim:sync`) — источник истины в `resources/sim`.
 
+## missions
+
+| Поле | Тип | Ограничения |
+|------|-----|-------------|
+| slug | varchar(96) | unique(slug, version) |
+| version | int | check > 0; правка опубликованной миссии = новая версия |
+| title | jsonb | `{ru, en}` |
+| theatre_id | bigint | FK → theatres, restrict, индекс |
+| historical_date | date null | |
+| difficulty | varchar(16) | check: training / normal / hard (`MissionDifficulty`) |
+| definition | jsonb | миссия по разделу 8.3, валидируется по `resources/sim/schemas/mission.schema.json` |
+| is_published | bool | каталог показывает последнюю опубликованную версию |
+| placeholder | bool | миссия «по мотивам» |
+| sources | jsonb | `[{title, url?}]` |
+
+Миссии загружает `ImportMission` (из `sim:sync`): JSON Schema → `MissionMetaData` (laravel-data) → версия.
+
 ## Служебные таблицы
 
 `password_reset_tokens`, `sessions` (не используется: сессии в Redis), `cache`, `cache_locks`, `jobs`,

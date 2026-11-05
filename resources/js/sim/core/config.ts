@@ -34,6 +34,80 @@ const gearPoint = z.object({
     brake: z.enum(['left', 'right']).nullable(),
 });
 
+/** Восемь станций (раздел 3); порядок = клавиши 1–8, совпадает с App\Domain\Aircraft\Enums\Station. */
+export const STATIONS = ['pilot', 'copilot', 'bombardier', 'navigator', 'top_gunner', 'radio', 'waist_gunner', 'tail_gunner'] as const;
+export type Station = (typeof STATIONS)[number];
+
+const mountSchema = z.object({
+    position_m: vec3,
+    az_center_deg: z.number(),
+    az_half_deg: z.number().min(0).max(180),
+    el_deg: z.tuple([z.number(), z.number()]),
+    slew_deg_s: z.number().nonnegative(),
+    no_fire: z.array(z.object({ az_center_deg: z.number(), az_half_deg: z.number(), el_max_deg: z.number() })),
+});
+
+export type MountConfig = z.infer<typeof mountSchema>;
+
+export const ZONES = [
+    'nose',
+    'cockpit',
+    'engine_left',
+    'engine_right',
+    'wing_left_inner',
+    'wing_left_outer',
+    'wing_right_inner',
+    'wing_right_outer',
+    'fuselage_mid',
+    'fuselage_rear',
+    'tail',
+    'gear',
+] as const;
+export type ZoneId = (typeof ZONES)[number];
+
+export const SUBSYSTEMS = [
+    'bombsight',
+    'nose_gun',
+    'instruments',
+    'oil_left',
+    'oil_right',
+    'generator_left',
+    'generator_right',
+    'hydraulic_pump_left',
+    'hydraulic_pump_right',
+    'prop_left',
+    'prop_right',
+    'tank_left_main',
+    'tank_right_main',
+    'tank_left_aux',
+    'tank_right_aux',
+    'flaps',
+    'aileron_left',
+    'aileron_right',
+    'bomb_bay',
+    'turret',
+    'radio',
+    'wiring',
+    'waist_guns',
+    'control_cables',
+    'elevator',
+    'rudder',
+    'tail_gun',
+    'gear_struts',
+    'tires',
+] as const;
+export type SubsystemId = (typeof SUBSYSTEMS)[number];
+
+const damageZoneSchema = z.object({
+    id: z.enum(ZONES),
+    box_m: z.tuple([vec3, vec3]),
+    hp: z.number().positive(),
+    crew: z.array(z.enum(STATIONS)),
+    subsystems: z.array(z.enum(SUBSYSTEMS)),
+});
+
+export type DamageZoneConfig = z.infer<typeof damageZoneSchema>;
+
 export const aircraftConfigSchema = z.object({
     id: z.string(),
     config_version: z.number().int().positive(),
@@ -171,20 +245,53 @@ export const aircraftConfigSchema = z.object({
         stations: todoValue,
         gameplay_x_m: sourced(z.number()),
     }),
-    stations: z.array(z.string()).length(8),
+    stations: z.array(z.enum(STATIONS)).length(8),
     guns: z.array(
         z.object({
             id: z.string(),
             weapon: z.string(),
             count: z.number().int().positive(),
             mount: z.enum(['fixed', 'flexible', 'turret']),
-            station: z.string(),
+            station: z.enum(STATIONS),
             removable: z.boolean().optional(),
             source: z.string().optional(),
             todo: z.string().optional(),
         }),
     ),
     arcs: todoValue,
+    gameplay_mounts: sourced(z.record(z.string(), mountSchema)),
+    gameplay_station_eyes: sourced(z.record(z.enum(STATIONS), vec3)),
+    systems: z.object({
+        oxygen_threshold_m: todoValue,
+        gameplay_oxygen_threshold_m: sourced(z.number().positive()),
+        gameplay_hypoxia_rate_per_s: sourced(z.number().nonnegative()),
+    }),
+    damage_model: z.object({
+        source: z.literal('gameplay'),
+        note: z.string().optional(),
+        value: z.object({
+            zones: z.array(damageZoneSchema).min(1),
+            subsystem_hp: z.number().positive(),
+            wound_chance_per_hit: z.number().min(0).max(1),
+            heavy_wound_share: z.number().min(0).max(1),
+            fire_chance_engine: z.number().min(0).max(1),
+            fire_chance_tank: z.number().min(0).max(1),
+            fire_chance_fuselage: z.number().min(0).max(1),
+            wing_fire_destruction_s: z.number().positive(),
+            oil_leak_seize_s: z.number().positive(),
+            tank_leak_kg_s: z.number().positive(),
+            self_sealing_tau_s: z.number().positive(),
+            self_sealing_max_leak_kg_s: z.number().nonnegative(),
+            lift_loss_per_hit: z.number().nonnegative(),
+            drag_per_hit: z.number().nonnegative(),
+            power_loss_per_hit: z.number().nonnegative(),
+            control_loss_per_hit: z.number().nonnegative(),
+            extinguish_s: z.number().positive(),
+            first_aid_s: z.number().positive(),
+            emergency_gear_s: z.number().positive(),
+            fuel_transfer_kg_s: z.number().positive(),
+        }),
+    }),
     sources: z.record(z.string(), z.url()),
 });
 

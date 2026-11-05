@@ -183,6 +183,88 @@
         { "id": "tail", "weapon": "m2", "count": 2, "mount": "flexible", "station": "tail_gunner" }
     ],
     "arcs": { "value": null, "todo": "TODO(history): сектора обстрела и скорости наведения по установкам" },
+    "gameplay_mounts": {
+        "source": "gameplay",
+        "note": "игровые сектора до появления данных arcs; азимут от носа по часовой, угол места вверх; position_m в осях FRD",
+        "value": {
+            "nose_flex": { "position_m": [7.7, 0, 0.3], "az_center_deg": 0, "az_half_deg": 30, "el_deg": [-35, 15], "slew_deg_s": 70, "no_fire": [] },
+            "nose_fixed": { "position_m": [7.9, 0.3, 0.5], "az_center_deg": 0, "az_half_deg": 0, "el_deg": [0, 0], "slew_deg_s": 0, "no_fire": [] },
+            "package_left": { "position_m": [4.6, -1.0, 0.6], "az_center_deg": 0, "az_half_deg": 0, "el_deg": [0, 0], "slew_deg_s": 0, "no_fire": [] },
+            "package_right": { "position_m": [4.6, 1.0, 0.6], "az_center_deg": 0, "az_half_deg": 0, "el_deg": [0, 0], "slew_deg_s": 0, "no_fire": [] },
+            "top_turret": {
+                "position_m": [2.6, 0, -1.75],
+                "az_center_deg": 0,
+                "az_half_deg": 180,
+                "el_deg": [-2, 85],
+                "slew_deg_s": 55,
+                "no_fire": [
+                    { "az_center_deg": 180, "az_half_deg": 24, "el_max_deg": 16 },
+                    { "az_center_deg": 0, "az_half_deg": 12, "el_max_deg": 5 }
+                ]
+            },
+            "waist_left": { "position_m": [-3.6, -0.9, -0.4], "az_center_deg": -90, "az_half_deg": 60, "el_deg": [-45, 45], "slew_deg_s": 90, "no_fire": [] },
+            "waist_right": { "position_m": [-3.6, 0.9, -0.4], "az_center_deg": 90, "az_half_deg": 60, "el_deg": [-45, 45], "slew_deg_s": 90, "no_fire": [] },
+            "tail": { "position_m": [-8.3, 0, -0.5], "az_center_deg": 180, "az_half_deg": 40, "el_deg": [-35, 30], "slew_deg_s": 45, "no_fire": [] }
+        }
+    },
+    "gameplay_station_eyes": {
+        "source": "gameplay",
+        "note": "точка глаз каждой станции в осях FRD от ЦМ",
+        "value": {
+            "pilot": [4.6, -0.45, -0.55],
+            "copilot": [4.6, 0.45, -0.55],
+            "bombardier": [7.3, 0, 0.15],
+            "navigator": [3.4, 0, -0.35],
+            "top_gunner": [2.6, 0, -1.95],
+            "radio": [-3.6, -0.7, -0.55],
+            "waist_gunner": [-3.6, 0.7, -0.55],
+            "tail_gunner": [-8.0, 0, -0.65]
+        }
+    },
+    "systems": {
+        "oxygen_threshold_m": { "value": null, "todo": "TODO(history): высота обязательного кислорода по наставлению" },
+        "gameplay_oxygen_threshold_m": { "value": 3000, "source": "gameplay" },
+        "gameplay_hypoxia_rate_per_s": { "value": 0.004, "source": "gameplay", "note": "потеря эффективности станции без кислорода выше порога" }
+    },
+    "damage_model": {
+        "source": "gameplay",
+        "note": "зоны планера раздела 7.3: коробки в осях FRD, запас прочности, подсистемы и экипаж; числа — игровые",
+        "value": {
+            "zones": [
+                { "id": "nose", "box_m": [[5.2, -0.9, -0.9], [8.3, 0.9, 1.0]], "hp": 60, "crew": ["bombardier"], "subsystems": ["bombsight", "nose_gun"] },
+                { "id": "cockpit", "box_m": [[3.0, -1.0, -1.4], [5.2, 1.0, 1.0]], "hp": 70, "crew": ["pilot", "copilot", "navigator"], "subsystems": ["instruments"] },
+                { "id": "engine_left", "box_m": [[0.2, -3.7, -0.8], [3.8, -2.2, 0.9]], "hp": 80, "crew": [], "subsystems": ["oil_left", "generator_left", "hydraulic_pump_left", "prop_left"] },
+                { "id": "engine_right", "box_m": [[0.2, 2.2, -0.8], [3.8, 3.7, 0.9]], "hp": 80, "crew": [], "subsystems": ["oil_right", "generator_right", "hydraulic_pump_right", "prop_right"] },
+                { "id": "wing_left_inner", "box_m": [[-1.4, -5.5, -0.4], [1.6, -1.0, 0.4]], "hp": 110, "crew": [], "subsystems": ["tank_left_main", "flaps"] },
+                { "id": "wing_left_outer", "box_m": [[-1.2, -10.3, -0.3], [1.0, -5.5, 0.3]], "hp": 90, "crew": [], "subsystems": ["tank_left_aux", "aileron_left"] },
+                { "id": "wing_right_inner", "box_m": [[-1.4, 1.0, -0.4], [1.6, 5.5, 0.4]], "hp": 110, "crew": [], "subsystems": ["tank_right_main", "flaps"] },
+                { "id": "wing_right_outer", "box_m": [[-1.2, 5.5, -0.3], [1.0, 10.3, 0.3]], "hp": 90, "crew": [], "subsystems": ["tank_right_aux", "aileron_right"] },
+                { "id": "fuselage_mid", "box_m": [[-2.6, -1.0, -1.4], [3.0, 1.0, 1.3]], "hp": 120, "crew": ["top_gunner"], "subsystems": ["bomb_bay", "turret", "radio", "wiring"] },
+                { "id": "fuselage_rear", "box_m": [[-6.5, -1.0, -1.2], [-2.6, 1.0, 1.2]], "hp": 100, "crew": ["radio", "waist_gunner"], "subsystems": ["waist_guns", "control_cables"] },
+                { "id": "tail", "box_m": [[-9.6, -3.6, -3.4], [-6.5, 3.6, 0.9]], "hp": 100, "crew": ["tail_gunner"], "subsystems": ["elevator", "rudder", "tail_gun"] },
+                { "id": "gear", "box_m": [[-1.0, -3.4, 0.9], [5.0, 3.4, 1.5]], "hp": 60, "crew": [], "subsystems": ["gear_struts", "tires"] }
+            ],
+            "subsystem_hp": 30,
+            "wound_chance_per_hit": 0.1,
+            "heavy_wound_share": 0.3,
+            "fire_chance_engine": 0.06,
+            "fire_chance_tank": 0.02,
+            "fire_chance_fuselage": 0.03,
+            "wing_fire_destruction_s": 75,
+            "oil_leak_seize_s": 90,
+            "tank_leak_kg_s": 0.6,
+            "self_sealing_tau_s": 25,
+            "self_sealing_max_leak_kg_s": 0.35,
+            "lift_loss_per_hit": 0.012,
+            "drag_per_hit": 0.00025,
+            "power_loss_per_hit": 0.06,
+            "control_loss_per_hit": 0.08,
+            "extinguish_s": 8,
+            "first_aid_s": 12,
+            "emergency_gear_s": 30,
+            "fuel_transfer_kg_s": 3
+        }
+    },
     "sources": {
         "wiki-b25": "https://en.wikipedia.org/wiki/North_American_B-25_Mitchell",
         "aam-43-4064": "https://americanairmuseum.com/aircraft/23469",

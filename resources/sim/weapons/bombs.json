@@ -1,0 +1,24 @@
+{
+    "config_version": 1,
+    "note": "типы бомб для поля loadout миссии (раздел 6.4); масса — номинальный класс, баллистика и радиусы поражения — игровые",
+    "bombs": [
+        {
+            "id": "AN-M64",
+            "name": "AN-M64 500 lb GP",
+            "mass_kg": { "value": 226.8, "source": "gameplay", "note": "номинальный класс 500 lb", "todo": "TODO(history): фактическая масса снаряжённой бомбы" },
+            "gameplay": {
+                "source": "gameplay",
+                "value": { "diameter_m": 0.36, "cd": 0.22, "lethal_radius_m": 14, "damage_radius_m": 40, "damage": 1.0 }
+            }
+        },
+        {
+            "id": "AN-M65",
+            "name": "AN-M65 1000 lb GP",
+            "mass_kg": { "value": 453.6, "source": "gameplay", "note": "номинальный класс 1000 lb", "todo": "TODO(history): фактическая масса снаряжённой бомбы" },
+            "gameplay": {
+                "source": "gameplay",
+                "value": { "diameter_m": 0.48, "cd": 0.22, "lethal_radius_m": 20, "damage_radius_m": 55, "damage": 2.0 }
+            }
+        }
+    ]
+}

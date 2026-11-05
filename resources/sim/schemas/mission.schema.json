@@ -1,0 +1,1239 @@
+{
+    "$id": "https://lil-critter.test/schemas/mission.schema.json",
+    "title": "Mission definition (section 8.3)",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+        },
+        "title": {
+            "type": "object",
+            "properties": {
+                "ru": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "en": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            },
+            "required": [
+                "ru",
+                "en"
+            ]
+        },
+        "historical_date": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "theatre": {
+            "type": "string",
+            "minLength": 1
+        },
+        "seed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+        },
+        "difficulty": {
+            "type": "string",
+            "enum": [
+                "training",
+                "normal",
+                "hard"
+            ]
+        },
+        "weather": {
+            "type": "object",
+            "properties": {
+                "clouds": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "base_m": {
+                                "type": "number",
+                                "minimum": 0
+                            },
+                            "top_m": {
+                                "type": "number",
+                                "minimum": 0
+                            },
+                            "coverage": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                            }
+                        },
+                        "required": [
+                            "base_m",
+                            "top_m",
+                            "coverage"
+                        ]
+                    }
+                },
+                "visibility_m": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "wind": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "altitude_m": {
+                                "type": "number"
+                            },
+                            "from_deg": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 360
+                            },
+                            "speed_ms": {
+                                "type": "number",
+                                "minimum": 0
+                            }
+                        },
+                        "required": [
+                            "altitude_m",
+                            "from_deg",
+                            "speed_ms"
+                        ]
+                    }
+                },
+                "turbulence_ms": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            },
+            "required": [
+                "clouds",
+                "visibility_m",
+                "wind",
+                "turbulence_ms"
+            ]
+        },
+        "time_of_day": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$"
+        },
+        "start": {
+            "type": "object",
+            "properties": {
+                "runway": {
+                    "type": "string"
+                },
+                "engines_running": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "runway",
+                "engines_running"
+            ]
+        },
+        "waypoints": {
+            "minItems": 3,
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "takeoff",
+                            "formup",
+                            "turn",
+                            "ip",
+                            "target",
+                            "rally",
+                            "initial_approach",
+                            "final",
+                            "base"
+                        ]
+                    },
+                    "lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "lon": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "alt_m": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 9000
+                    },
+                    "speed_kmh": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "lat",
+                    "lon",
+                    "alt_m"
+                ]
+            }
+        },
+        "target": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "bridge",
+                        "rail_yard",
+                        "airfield",
+                        "gun_position"
+                    ]
+                },
+                "name": {
+                    "type": "object",
+                    "properties": {
+                        "ru": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "en": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    },
+                    "required": [
+                        "ru",
+                        "en"
+                    ]
+                },
+                "aim_point": {
+                    "type": "object",
+                    "properties": {
+                        "lat": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                        },
+                        "lon": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                        }
+                    },
+                    "required": [
+                        "lat",
+                        "lon"
+                    ]
+                },
+                "elevation_m": {
+                    "type": "number"
+                },
+                "heading_deg": {
+                    "type": "number"
+                },
+                "sections": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "offset_m": {
+                                "type": "array",
+                                "prefixItems": [
+                                    {
+                                        "type": "number"
+                                    },
+                                    {
+                                        "type": "number"
+                                    }
+                                ],
+                                "items": false,
+                                "minItems": 2,
+                                "maxItems": 2
+                            },
+                            "length_m": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "width_m": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "strength": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "offset_m",
+                            "length_m",
+                            "width_m",
+                            "strength"
+                        ]
+                    }
+                },
+                "destroyed_when": {
+                    "type": "string",
+                    "enum": [
+                        "any_section",
+                        "all_sections"
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "type",
+                "name",
+                "aim_point",
+                "elevation_m",
+                "heading_deg",
+                "sections",
+                "destroyed_when"
+            ]
+        },
+        "alternate_targets": {
+            "default": [],
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "bridge",
+                            "rail_yard",
+                            "airfield",
+                            "gun_position"
+                        ]
+                    },
+                    "name": {
+                        "type": "object",
+                        "properties": {
+                            "ru": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "en": {
+                                "type": "string",
+                                "minLength": 1
+                            }
+                        },
+                        "required": [
+                            "ru",
+                            "en"
+                        ]
+                    },
+                    "aim_point": {
+                        "type": "object",
+                        "properties": {
+                            "lat": {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                            },
+                            "lon": {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                            }
+                        },
+                        "required": [
+                            "lat",
+                            "lon"
+                        ]
+                    },
+                    "elevation_m": {
+                        "type": "number"
+                    },
+                    "heading_deg": {
+                        "type": "number"
+                    },
+                    "sections": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "offset_m": {
+                                    "type": "array",
+                                    "prefixItems": [
+                                        {
+                                            "type": "number"
+                                        },
+                                        {
+                                            "type": "number"
+                                        }
+                                    ],
+                                    "items": false,
+                                    "minItems": 2,
+                                    "maxItems": 2
+                                },
+                                "length_m": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "width_m": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                },
+                                "strength": {
+                                    "type": "number",
+                                    "exclusiveMinimum": 0
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "offset_m",
+                                "length_m",
+                                "width_m",
+                                "strength"
+                            ]
+                        }
+                    },
+                    "destroyed_when": {
+                        "type": "string",
+                        "enum": [
+                            "any_section",
+                            "all_sections"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "name",
+                    "aim_point",
+                    "elevation_m",
+                    "heading_deg",
+                    "sections",
+                    "destroyed_when"
+                ]
+            }
+        },
+        "time_over_target": {
+            "type": "object",
+            "properties": {
+                "at_s": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "window_s": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
+            },
+            "required": [
+                "at_s",
+                "window_s"
+            ]
+        },
+        "formation": {
+            "type": "object",
+            "properties": {
+                "wingmen": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 11
+                },
+                "spacing_m": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
+            },
+            "required": [
+                "wingmen",
+                "spacing_m"
+            ]
+        },
+        "loadout": {
+            "type": "object",
+            "properties": {
+                "bombs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string"
+                            },
+                            "count": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                            }
+                        },
+                        "required": [
+                            "type",
+                            "count"
+                        ]
+                    }
+                },
+                "fuel_kg": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                },
+                "planned_burn_kg": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                }
+            },
+            "required": [
+                "bombs",
+                "fuel_kg",
+                "planned_burn_kg"
+            ]
+        },
+        "threats": {
+            "type": "object",
+            "properties": {
+                "flak": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "heavy",
+                                    "light"
+                                ]
+                            },
+                            "lat": {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                            },
+                            "lon": {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                            },
+                            "elevation_m": {
+                                "type": "number"
+                            },
+                            "guns": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                            },
+                            "active": {
+                                "type": "boolean"
+                            },
+                            "barrage": {
+                                "default": false,
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "type",
+                            "lat",
+                            "lon",
+                            "elevation_m",
+                            "guns",
+                            "active"
+                        ]
+                    }
+                },
+                "fighter_waves": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "type": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "count": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 12
+                            },
+                            "skill": {
+                                "type": "string",
+                                "enum": [
+                                    "novice",
+                                    "experienced",
+                                    "veteran"
+                                ]
+                            },
+                            "spawn": {
+                                "type": "object",
+                                "properties": {
+                                    "bearing_deg": {
+                                        "type": "number"
+                                    },
+                                    "distance_m": {
+                                        "type": "number",
+                                        "exclusiveMinimum": 0
+                                    },
+                                    "altitude_offset_m": {
+                                        "type": "number"
+                                    }
+                                },
+                                "required": [
+                                    "bearing_deg",
+                                    "distance_m",
+                                    "altitude_offset_m"
+                                ]
+                            },
+                            "attacks": {
+                                "minItems": 1,
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "head_on",
+                                        "high_six",
+                                        "beam"
+                                    ]
+                                }
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "type",
+                            "count",
+                            "skill",
+                            "spawn",
+                            "attacks"
+                        ]
+                    }
+                }
+            },
+            "required": [
+                "flak",
+                "fighter_waves"
+            ]
+        },
+        "radio": {
+            "type": "object",
+            "properties": {
+                "frequencies_mhz": {
+                    "type": "object",
+                    "properties": {
+                        "tower": {
+                            "type": "number"
+                        },
+                        "command": {
+                            "type": "number"
+                        },
+                        "base": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "tower",
+                        "command",
+                        "base"
+                    ]
+                },
+                "code_table": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "group": {
+                                "type": "string"
+                            },
+                            "meaning": {
+                                "type": "string",
+                                "enum": [
+                                    "target_confirmed",
+                                    "recall",
+                                    "weather_clear",
+                                    "weather_bad",
+                                    "fighters_reported",
+                                    "change_target",
+                                    "iff_reminder",
+                                    "landing_clearance"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "group",
+                            "meaning"
+                        ]
+                    }
+                },
+                "beacon": {
+                    "type": "object",
+                    "properties": {
+                        "lat": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                        },
+                        "lon": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                        }
+                    },
+                    "required": [
+                        "lat",
+                        "lon"
+                    ]
+                }
+            },
+            "required": [
+                "frequencies_mhz",
+                "code_table",
+                "beacon"
+            ]
+        },
+        "radio_script": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "channel": {
+                        "type": "string",
+                        "enum": [
+                            "tower",
+                            "command",
+                            "base"
+                        ]
+                    },
+                    "group": {
+                        "type": "string",
+                        "minLength": 2
+                    },
+                    "meaning": {
+                        "type": "string",
+                        "enum": [
+                            "target_confirmed",
+                            "recall",
+                            "weather_clear",
+                            "weather_bad",
+                            "fighters_reported",
+                            "change_target",
+                            "iff_reminder",
+                            "landing_clearance"
+                        ]
+                    },
+                    "duration_s": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                    },
+                    "repeats": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                    }
+                },
+                "required": [
+                    "id",
+                    "channel",
+                    "group",
+                    "meaning",
+                    "duration_s",
+                    "repeats"
+                ]
+            }
+        },
+        "triggers": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "once": {
+                        "default": true,
+                        "type": "boolean"
+                    },
+                    "when": {
+                        "type": "object",
+                        "properties": {
+                            "phase": {
+                                "type": "string"
+                            },
+                            "near_waypoint": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "radius_m": {
+                                        "type": "number",
+                                        "exclusiveMinimum": 0
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "radius_m"
+                                ]
+                            },
+                            "time_s": {
+                                "type": "number",
+                                "minimum": 0
+                            },
+                            "event": {
+                                "type": "string",
+                                "enum": [
+                                    "bombs_released",
+                                    "radio_transmit",
+                                    "message_received",
+                                    "aircraft_damaged"
+                                ]
+                            },
+                            "message_id": {
+                                "type": "string"
+                            },
+                            "probability": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                            }
+                        }
+                    },
+                    "then": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "oneOf": [
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "spawn_wave"
+                                        },
+                                        "wave": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "wave"
+                                    ]
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "send_radio"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "message"
+                                    ]
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "change_target"
+                                        },
+                                        "target": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "target"
+                                    ]
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "set_weather"
+                                        },
+                                        "weather": {
+                                            "type": "object",
+                                            "properties": {
+                                                "clouds": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "base_m": {
+                                                                "type": "number",
+                                                                "minimum": 0
+                                                            },
+                                                            "top_m": {
+                                                                "type": "number",
+                                                                "minimum": 0
+                                                            },
+                                                            "coverage": {
+                                                                "type": "number",
+                                                                "minimum": 0,
+                                                                "maximum": 1
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "base_m",
+                                                            "top_m",
+                                                            "coverage"
+                                                        ]
+                                                    }
+                                                },
+                                                "visibility_m": {
+                                                    "type": "number",
+                                                    "exclusiveMinimum": 0
+                                                },
+                                                "wind": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "altitude_m": {
+                                                                "type": "number"
+                                                            },
+                                                            "from_deg": {
+                                                                "type": "number",
+                                                                "minimum": 0,
+                                                                "maximum": 360
+                                                            },
+                                                            "speed_ms": {
+                                                                "type": "number",
+                                                                "minimum": 0
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "altitude_m",
+                                                            "from_deg",
+                                                            "speed_ms"
+                                                        ]
+                                                    }
+                                                },
+                                                "turbulence_ms": {
+                                                    "type": "number",
+                                                    "minimum": 0
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "weather"
+                                    ]
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "activate_battery"
+                                        },
+                                        "battery": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "battery"
+                                    ]
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "recall"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "when",
+                    "then"
+                ]
+            }
+        },
+        "landmarks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "lat": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "lon": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    },
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "coast",
+                            "town",
+                            "river",
+                            "cape",
+                            "island"
+                        ]
+                    },
+                    "name": {
+                        "type": "object",
+                        "properties": {
+                            "ru": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "en": {
+                                "type": "string",
+                                "minLength": 1
+                            }
+                        },
+                        "required": [
+                            "ru",
+                            "en"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "lat",
+                    "lon",
+                    "kind",
+                    "name"
+                ]
+            }
+        },
+        "objectives": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "destroy_target",
+                            "return_aircraft",
+                            "crew_survival",
+                            "time_over_target"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "type"
+                ]
+            }
+        },
+        "scoring": {
+            "type": "object",
+            "properties": {
+                "target": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "aircraft": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "crew": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "timing": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            },
+            "required": [
+                "target",
+                "aircraft",
+                "crew",
+                "timing"
+            ]
+        },
+        "briefing": {
+            "type": "object",
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "ru": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "en": {
+                            "type": "string",
+                            "minLength": 1
+                        }
+                    },
+                    "required": [
+                        "ru",
+                        "en"
+                    ]
+                },
+                "roles": {
+                    "type": "object",
+                    "propertyNames": {
+                        "type": "string",
+                        "enum": [
+                            "pilot",
+                            "copilot",
+                            "bombardier",
+                            "navigator",
+                            "top_gunner",
+                            "radio",
+                            "waist_gunner",
+                            "tail_gunner"
+                        ]
+                    },
+                    "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                            "ru": {
+                                "type": "string",
+                                "minLength": 1
+                            },
+                            "en": {
+                                "type": "string",
+                                "minLength": 1
+                            }
+                        },
+                        "required": [
+                            "ru",
+                            "en"
+                        ]
+                    },
+                    "required": [
+                        "pilot",
+                        "copilot",
+                        "bombardier",
+                        "navigator",
+                        "top_gunner",
+                        "radio",
+                        "waist_gunner",
+                        "tail_gunner"
+                    ]
+                }
+            },
+            "required": [
+                "general",
+                "roles"
+            ]
+        },
+        "sources": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "required": [
+                    "title"
+                ]
+            }
+        },
+        "placeholder": {
+            "type": "boolean"
+        },
+        "todo": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "id",
+        "version",
+        "title",
+        "historical_date",
+        "theatre",
+        "seed",
+        "difficulty",
+        "weather",
+        "time_of_day",
+        "start",
+        "waypoints",
+        "target",
+        "time_over_target",
+        "formation",
+        "loadout",
+        "threats",
+        "radio",
+        "radio_script",
+        "triggers",
+        "landmarks",
+        "objectives",
+        "scoring",
+        "briefing",
+        "sources",
+        "placeholder"
+    ]
+}

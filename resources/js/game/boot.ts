@@ -1,55 +1,67 @@
 import * as Comlink from 'comlink';
 import * as THREE from 'three';
-import type { AircraftConfig, AircraftInput, Snapshot, TheatreConfig } from '@/sim/core';
-import { parseAircraftConfig, ProceduralTerrain, TICK_HZ } from '@/sim/core';
+import type { AircraftConfig, Debrief, Difficulty, Station, TheatreConfig, WorldAction } from '@/sim/core';
+import { mountDirectionBody, parseAircraftConfig, ProceduralTerrain, STATIONS, TICK_HZ } from '@/sim/core';
+import type { MissionStatic, WorldView } from '@/sim/view';
 import type { SimWorker } from '@/sim/worker';
 import simWorkerUrl from '@/sim/worker?worker&url';
-import { PilotKeyboard } from './input/pilotKeyboard';
+import { StationInput } from './input/stationInput';
 import { createAircraftModel } from './render/aircraftModel';
 import { createCockpit } from './render/cockpit';
 import { attitudeToThree, Q_CAMERA_IN_FRD, toThree } from './render/coords';
-import { drawPilotPanel, M_TO_FT, MS_TO_MPH } from './render/instruments';
+import { createEntities } from './render/entities';
+import { drawPilotPanel } from './render/instruments';
 import type { GraphicsPreset } from './render/world';
 import { createWorld } from './render/world';
 
 /**
- * Игровой клиент станции «Пилот» (этап 1). Монтируется в любую страницу Inertia,
- * грузится отдельным чанком (раздел 4: code splitting).
+ * Игровой клиент этапа 2: восемь станций, переключение 1–8, ИИ на остальных местах.
+ * Монтируется в страницу Inertia, грузится отдельным чанком (раздел 4: code splitting).
+ * Мир живёт в воркере; здесь — рендер, камера станции и ввод.
  */
-export type Difficulty = 'training' | 'historical';
-export type CameraView = 'cockpit' | 'external';
+export type CameraView = 'station' | 'external';
 
-export type GameStatus = {
-    iasMph: number;
-    altitudeFt: number;
-    verticalSpeedFpm: number;
-    headingDeg: number;
-    throttle: number;
-    gearDown: boolean;
-    flaps: number;
-    contact: string;
-    touchdownVsMs: number | null;
-    view: CameraView;
-    paused: boolean;
+export type ScreenMarker = { x: number; y: number; kind: 'lead' | 'fighter'; id: number };
+
+export type GameFrame = {
+    view: WorldView;
+    statics: MissionStatic;
     fps: number;
-    autopilotPhase: string | null;
+    paused: boolean;
+    camera: CameraView;
+    scope: boolean;
+    pointerLocked: boolean;
+    timeScale: number;
+    markers: ScreenMarker[];
     renderScale: number;
 };
 
 export type GameOptions = {
+    mode: 'mission' | 'training';
+    station: Station;
     config: unknown;
+    mission: unknown;
     theatre: TheatreConfig;
     difficulty: Difficulty;
     seed: number;
     graphics?: GraphicsPreset;
-    onStatus?: (status: GameStatus) => void;
+    /** Отладочное ускорение сверх ×4 (только не в продакшене): игнорирует ограничения фаз. */
+    maxTimeScale?: number;
+    onFrame?: (frame: GameFrame) => void;
 };
 
 export type GameHandle = {
+    act(action: WorldAction): void;
+    setStation(station: Station): Promise<void>;
     toggleView(): void;
+    toggleScope(): void;
     togglePause(): void;
-    setAutopilot(enabled: boolean): Promise<void>;
+    setPaused(paused: boolean): void;
+    setTimeScale(scale: number): void;
+    setDemo(enabled: boolean): Promise<void>;
+    setThrottle(value: [number, number]): void;
     restart(): Promise<void>;
+    debrief(): Promise<Debrief>;
     dispose(): void;
 };
 
@@ -71,16 +83,14 @@ function createSimWorker(): Worker {
     return new Worker(shim, { type: 'module' });
 }
 
+const COCKPIT_STATIONS: Station[] = ['pilot', 'copilot'];
+
 export async function mountGame(container: HTMLElement, options: GameOptions): Promise<GameHandle> {
     // Пропсы Vue — реактивные Proxy, structured clone в воркер их не принимает.
     const rawConfig: unknown = JSON.parse(JSON.stringify(options.config));
+    const rawMission: unknown = JSON.parse(JSON.stringify(options.mission));
     const config: AircraftConfig = parseAircraftConfig(rawConfig);
     const terrain = new ProceduralTerrain(options.theatre);
-    const runway = options.theatre.runways[0];
-
-    if (runway === undefined) {
-        throw new Error('Theatre has no runway');
-    }
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     let renderScale = Math.min(window.devicePixelRatio, 1.5);
@@ -101,36 +111,22 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
 
     const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 90000);
     const panelCtx = cockpit.panelCanvas.getContext('2d');
-    const keyboard = new PilotKeyboard(window);
+    const canvas = renderer.domElement;
+    const input = new StationInput(window, canvas);
 
-    // Воркер симядра.
     const worker = createSimWorker();
     const sim = Comlink.wrap<SimWorker>(worker);
+    let station: Station = options.station;
 
-    const startOnRunway = async (): Promise<Snapshot> => {
-        const y = runway.y - runway.length_m / 2 + 60;
+    const init = async (): Promise<{ view: WorldView; statics: MissionStatic }> =>
+        sim.init({ mode: options.mode, config: rawConfig, mission: rawMission, theatre: options.theatre, difficulty: options.difficulty, seed: options.seed, station });
 
-        keyboard.reset({ throttle: 0, gearDown: true, flaps: 0.25 });
+    let { view, statics } = await init();
+    let entities = createEntities(world.scene, statics);
 
-        return sim.init({
-            config: rawConfig,
-            theatre: options.theatre,
-            seed: options.seed,
-            initial: {
-                position: { x: runway.x, y, z: terrain.heightAt(runway.x, y) + 2.0 },
-                heading: runway.heading,
-                speed: 0,
-                gearDown: true,
-                flaps: 0.25,
-                enginesRunning: true,
-                onGround: true,
-                loadout: { crew: 6, ammoKg: 300, bombsKg: 0, fuelKg: 14500 - config.mass.empty_kg.value - 6 * 90 - 300 },
-            },
-        });
-    };
+    input.setStation(station, view);
 
-    let snapshot = await startOnRunway();
-    let view: CameraView = 'cockpit';
+    let cameraView: CameraView = 'station';
     let paused = false;
     let pending = false;
     let accumulator = 0;
@@ -138,8 +134,9 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
     let frame = 0;
     let fps = 60;
     let lowFpsSeconds = 0;
-    let autopilotPhase: string | null = null;
     let disposed = false;
+    let timeScale = 1;
+    let markers: ScreenMarker[] = [];
     const look = { yaw: 0, pitch: -0.12, fov: 70 };
 
     const resize = (): void => {
@@ -147,8 +144,8 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
         const height = container.clientHeight || window.innerHeight;
 
         renderer.setSize(width, height, false);
-        renderer.domElement.style.width = `${width}px`;
-        renderer.domElement.style.height = `${height}px`;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
     };
@@ -171,28 +168,43 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
         }
     };
     const onMouseMove = (e: MouseEvent): void => {
-        if (looking) {
+        if (looking && !input.pointerLocked) {
             look.yaw = THREE.MathUtils.clamp(look.yaw - e.movementX * 0.004, -2.6, 2.6);
-            look.pitch = THREE.MathUtils.clamp(look.pitch - e.movementY * 0.004, -1.2, 1.2);
+            look.pitch = THREE.MathUtils.clamp(look.pitch - e.movementY * 0.004, -1.4, 1.2);
         }
     };
     const onWheel = (e: WheelEvent): void => {
+        if (input.wantsPointer() || station === 'radio') {
+            return;
+        }
+
         e.preventDefault();
-        look.fov = THREE.MathUtils.clamp(look.fov + Math.sign(e.deltaY) * 4, 25, 90);
+        look.fov = THREE.MathUtils.clamp(look.fov + Math.sign(e.deltaY) * 4, 20, 90);
     };
     const onContextMenu = (e: Event): void => e.preventDefault();
     const onKey = (e: KeyboardEvent): void => {
-        if (e.code === 'KeyV' && options.difficulty === 'training') {
+        if (e.repeat) {
+            return;
+        }
+
+        const digit = /^Digit([1-8])$/.exec(e.code);
+
+        if (digit) {
+            const next = STATIONS[Number(digit[1]) - 1];
+
+            if (next) {
+                void handle.setStation(next);
+            }
+        } else if (e.code === 'KeyV' && options.difficulty === 'training') {
             handle.toggleView();
         } else if (e.code === 'KeyH') {
             look.yaw = 0;
-            look.pitch = -0.12;
+            look.pitch = station === 'navigator' ? -0.5 : -0.12;
             look.fov = 70;
         } else if (e.code === 'KeyP') {
             handle.togglePause();
         }
     };
-    const canvas = renderer.domElement;
 
     canvas.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
@@ -201,33 +213,29 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
     canvas.addEventListener('contextmenu', onContextMenu);
     window.addEventListener('keydown', onKey);
 
-    const eye = config.geometry.pilot_eye_m.value;
+    const eyes = config.gameplay_station_eyes.value;
     const aircraftQuat = new THREE.Quaternion();
     const lookQuat = new THREE.Quaternion();
     const tmp = new THREE.Vector3();
+    const tmp2 = new THREE.Vector3();
+    const shake = new THREE.Vector3();
 
     const placeCamera = (): void => {
-        const a = snapshot.aircraft;
+        const a = view.aircraft;
 
         attitudeToThree(a.attitude, aircraftQuat);
-        model.root.position.copy(toThree(a.position, tmp));
+        toThree(a.position, model.root.position);
         model.root.quaternion.copy(aircraftQuat);
 
+        const interior = cameraView === 'station' && COCKPIT_STATIONS.includes(station);
+
         for (const part of model.exteriorOnly) {
-            part.visible = view === 'external';
+            part.visible = !interior;
         }
 
-        cockpit.group.visible = view === 'cockpit';
+        cockpit.group.visible = interior;
 
-        if (view === 'cockpit') {
-            const eyeWorld = new THREE.Vector3(eye[0], eye[1], eye[2]).applyQuaternion(aircraftQuat).add(model.root.position);
-
-            lookQuat.setFromEuler(new THREE.Euler(look.pitch, look.yaw, 0, 'YXZ'));
-            camera.position.copy(eyeWorld);
-            camera.quaternion.copy(aircraftQuat).multiply(Q_CAMERA_IN_FRD).multiply(lookQuat);
-            camera.fov = look.fov;
-        } else {
-            // Внешняя камера сзади-сверху (только «Учебный» режим и разбор).
+        if (cameraView === 'external') {
             const behind = new THREE.Vector3(-32, 0, -9).applyQuaternion(aircraftQuat);
 
             behind.y = Math.max(behind.y, 4);
@@ -235,13 +243,88 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
             camera.up.set(0, 1, 0);
             camera.lookAt(model.root.position);
             camera.fov = 55;
+            camera.updateProjectionMatrix();
+
+            return;
+        }
+
+        const eye = eyes[station];
+        const eyeWorld = tmp.set(eye[0], eye[1], eye[2]).applyQuaternion(aircraftQuat).add(model.root.position);
+
+        // Тряска камеры от близких разрывов и попаданий.
+        const hit = view.damage.lastHitAgoS;
+        const intensity = hit !== null && hit < 0.4 ? (0.4 - hit) * 0.25 : 0;
+
+        shake.set((Math.random() - 0.5) * intensity, (Math.random() - 0.5) * intensity, (Math.random() - 0.5) * intensity);
+        camera.position.copy(eyeWorld).add(shake);
+
+        if (station === 'bombardier' && input.scope && view.sight.on && view.sight.aim) {
+            // Окуляр прицела: узкое поле зрения на точку прицеливания, «вверх» — по пути.
+            const target = tmp2.set(a.position.x + view.sight.aim.x, statics.target.aim.z, -(a.position.y + view.sight.aim.y));
+            const track = view.derived.heading + view.sight.driftRad;
+
+            camera.up.set(Math.sin(track), 0, -Math.cos(track));
+            camera.lookAt(target);
+            camera.fov = 7;
+        } else if (input.gunMode()) {
+            // За пулемётом: камера смотрит по желаемому направлению ствола.
+            const dirBody = mountDirectionBody(input.aim.az, input.aim.el);
+            const dirWorld = tmp2.set(dirBody.x, dirBody.y, dirBody.z).applyQuaternion(aircraftQuat);
+            const up = new THREE.Vector3(0, 0, -1).applyQuaternion(aircraftQuat);
+
+            camera.up.copy(up);
+            camera.lookAt(dirWorld.add(camera.position));
+            camera.fov = look.fov;
+        } else {
+            const pitch = station === 'navigator' && look.pitch === -0.12 ? -0.5 : look.pitch;
+
+            lookQuat.setFromEuler(new THREE.Euler(pitch, look.yaw, 0, 'YXZ'));
+            camera.quaternion.copy(aircraftQuat).multiply(Q_CAMERA_IN_FRD).multiply(lookQuat);
+            camera.fov = station === 'radio' ? 60 : look.fov;
         }
 
         camera.updateProjectionMatrix();
     };
 
+    /** Маркеры упреждения для «Учебного» режима у стрелков (раздел 6.6). */
+    const computeMarkers = (): ScreenMarker[] => {
+        if (options.difficulty !== 'training' || !input.gunMode() || cameraView !== 'station') {
+            return [];
+        }
+
+        const out: ScreenMarker[] = [];
+        const a = view.aircraft;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        for (const f of view.fighters) {
+            if (f.phase === 'down') {
+                continue;
+            }
+
+            const rx = f.position.x - a.position.x;
+            const ry = f.position.y - a.position.y;
+            const rz = f.position.z - a.position.z;
+            const range = Math.hypot(rx, ry, rz);
+
+            if (range > 1500) {
+                continue;
+            }
+
+            const tof = range / 820;
+            const lead = { x: f.position.x + (f.velocity.x - a.velocity.x) * tof, y: f.position.y + (f.velocity.y - a.velocity.y) * tof, z: f.position.z + (f.velocity.z - a.velocity.z) * tof };
+            const p = toThree(lead, tmp).project(camera);
+
+            if (p.z < 1 && Math.abs(p.x) < 1.2 && Math.abs(p.y) < 1.2) {
+                out.push({ x: ((p.x + 1) / 2) * width, y: ((1 - p.y) / 2) * height, kind: 'lead', id: f.id });
+            }
+        }
+
+        return out;
+    };
+
     const animateModel = (dt: number): void => {
-        snapshot.aircraft.engines.forEach((engine, i) => {
+        view.aircraft.engines.forEach((engine, i) => {
             const prop = model.propellers[i];
 
             if (prop) {
@@ -250,31 +333,9 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
         });
 
         for (const leg of model.gear) {
-            leg.visible = snapshot.aircraft.gear > 0.05;
-            leg.scale.setScalar(Math.max(snapshot.aircraft.gear, 0.05));
+            leg.visible = view.aircraft.gear > 0.05;
+            leg.scale.setScalar(Math.max(view.aircraft.gear, 0.05));
         }
-    };
-
-    const reportStatus = (): void => {
-        const d = snapshot.derived;
-        const kb = keyboard.status;
-
-        options.onStatus?.({
-            iasMph: d.indicatedAirspeed * MS_TO_MPH,
-            altitudeFt: d.altitude * M_TO_FT,
-            verticalSpeedFpm: d.verticalSpeed * M_TO_FT * 60,
-            headingDeg: (d.heading * 180) / Math.PI,
-            throttle: kb.throttle,
-            gearDown: kb.gearDown,
-            flaps: kb.flaps,
-            contact: snapshot.aircraft.contact,
-            touchdownVsMs: snapshot.aircraft.touchdownVs,
-            view,
-            paused,
-            fps,
-            autopilotPhase,
-            renderScale,
-        });
     };
 
     const tick = (now: number): void => {
@@ -300,66 +361,100 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
             lowFpsSeconds = 0;
         }
 
-        const input: AircraftInput = keyboard.sample(dt);
+        if (!paused && !pending && view.phase !== 'debrief') {
+            // ×2/×4 — только на маршруте без угроз (раздел 8.2); отладочное ×16 — без ограничений.
+            const scale = timeScale > 4 || view.canAccelerate ? timeScale : 1;
 
-        if (!paused && !pending) {
-            accumulator += dt;
+            accumulator += dt * scale;
 
-            const steps = Math.min(Math.floor(accumulator * TICK_HZ), MAX_STEPS_PER_FRAME);
+            const maxSteps = MAX_STEPS_PER_FRAME * scale;
+            const steps = Math.min(Math.floor(accumulator * TICK_HZ), maxSteps);
 
             if (steps > 0) {
                 accumulator -= steps / TICK_HZ;
                 pending = true;
+
+                const sample = input.sample(dt, view);
+
                 void sim
-                    .advance(input, steps)
-                    .then(async (next) => {
-                        snapshot = next;
-                        autopilotPhase = await sim.autopilotPhase();
+                    .advance(sample, steps)
+                    .then((next) => {
+                        view = next;
                     })
                     .finally(() => {
                         pending = false;
                     });
             }
 
-            accumulator = Math.min(accumulator, MAX_STEPS_PER_FRAME / TICK_HZ);
+            accumulator = Math.min(accumulator, maxSteps / TICK_HZ);
         }
 
         placeCamera();
         animateModel(dt);
+        entities.update(view, dt);
+        world.update(camera.position.x, -camera.position.z);
 
-        if (panelCtx && view === 'cockpit' && frame % 2 === 0) {
-            drawPilotPanel(panelCtx, snapshot.aircraft, snapshot.derived, { pdi: 0 });
+        if (panelCtx && cockpit.group.visible && frame % 2 === 0) {
+            drawPilotPanel(panelCtx, view.aircraft, view.derived, { pdi: view.sight.on ? (view.sight.readout?.pdi ?? 0) : 0 });
             cockpit.panelTexture.needsUpdate = true;
         }
 
         renderer.render(world.scene, camera);
 
-        if (frame % 10 === 0) {
-            reportStatus();
+        if (frame % 3 === 0) {
+            markers = computeMarkers();
+            options.onFrame?.({ view, statics, fps, paused, camera: cameraView, scope: input.scope, pointerLocked: input.pointerLocked, timeScale, markers, renderScale });
         }
     };
 
     const handle: GameHandle = {
-        toggleView: () => {
-            if (options.difficulty === 'training') {
-                view = view === 'cockpit' ? 'external' : 'cockpit';
+        act: (action) => input.push(action),
+        setStation: async (next) => {
+            if (next === station) {
+                return;
+            }
+
+            station = next;
+            view = await sim.setStation(next);
+            input.setStation(next, view);
+            look.yaw = 0;
+            look.pitch = next === 'navigator' ? -0.5 : -0.12;
+            look.fov = 70;
+
+            if (document.pointerLockElement === canvas) {
+                document.exitPointerLock();
             }
         },
-        togglePause: () => {
-            paused = !paused;
+        toggleView: () => {
+            if (options.difficulty === 'training') {
+                cameraView = cameraView === 'station' ? 'external' : 'station';
+            }
+        },
+        toggleScope: () => input.toggleScope(),
+        togglePause: () => handle.setPaused(!paused),
+        setPaused: (value) => {
+            paused = value;
             last = performance.now();
         },
-        setAutopilot: async (enabled) => {
-            await sim.setAutopilot(enabled);
+        setTimeScale: (value) => {
+            timeScale = Math.min(Math.max(1, value), options.maxTimeScale ?? 4);
         },
+        setDemo: async (enabled) => {
+            await sim.setDemo(enabled);
+        },
+        setThrottle: (value) => input.setThrottle(value),
         restart: async () => {
-            snapshot = await startOnRunway();
+            entities.dispose();
+            ({ view, statics } = await init());
+            entities = createEntities(world.scene, statics);
+            input.setStation(station, view);
             accumulator = 0;
         },
+        debrief: async () => sim.debrief(),
         dispose: () => {
             disposed = true;
             observer.disconnect();
-            keyboard.dispose();
+            input.dispose();
             canvas.removeEventListener('mousedown', onMouseDown);
             window.removeEventListener('mouseup', onMouseUp);
             window.removeEventListener('mousemove', onMouseMove);
@@ -367,6 +462,7 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
             canvas.removeEventListener('contextmenu', onContextMenu);
             window.removeEventListener('keydown', onKey);
             worker.terminate();
+            entities.dispose();
             model.dispose();
             cockpit.dispose();
             world.dispose();

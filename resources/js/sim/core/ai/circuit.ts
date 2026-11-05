@@ -51,7 +51,12 @@ export class CircuitPilot {
     private readonly ap = new Autopilot();
     private phaseTime = 0;
 
-    constructor(private readonly options: CircuitOptions) {}
+    constructor(
+        private readonly options: CircuitOptions,
+        startPhase: CircuitPhase = 'takeoff_roll',
+    ) {
+        this.phase = startPhase;
+    }
 
     /** Координаты в системе полосы: along — вдоль курса от центра, across — вправо. */
     private runwayFrame(x: number, y: number): { along: number; across: number } {

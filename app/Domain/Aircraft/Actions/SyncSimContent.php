@@ -6,6 +6,7 @@ namespace App\Domain\Aircraft\Actions;
 
 use App\Domain\Aircraft\Models\AircraftType;
 use App\Domain\Aircraft\Models\Airframe;
+use App\Domain\Missions\Actions\ImportMission;
 use App\Domain\Missions\Models\Theatre;
 use Illuminate\Support\Facades\DB;
 use JsonException;
@@ -13,10 +14,13 @@ use RuntimeException;
 
 /**
  * Загружает контент симуляции из resources/sim (единственный источник) в БД.
- * Схема файлов проверяется в Vitest (zod → resources/sim/schemas/*.schema.json).
+ * Схема файлов проверяется в Vitest (zod → resources/sim/schemas/*.schema.json),
+ * миссии дополнительно — на сервере по mission.schema.json (ImportMission).
  */
-final class SyncSimContent
+final readonly class SyncSimContent
 {
+    public function __construct(private ImportMission $importMission) {}
+
     /**
      * @throws JsonException
      */
@@ -52,6 +56,10 @@ final class SyncSimContent
                 'name' => $airframe['name'],
                 'livery' => '340bg-olive-drab',
             ]);
+
+            foreach (glob(resource_path('sim/missions/*.json')) ?: [] as $file) {
+                $this->importMission->handle($this->readJson('sim/missions/'.basename($file)));
+            }
         });
     }
 

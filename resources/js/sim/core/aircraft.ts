@@ -2,7 +2,7 @@ import type { WeatherConfig } from './atmosphere';
 import { GRAVITY, isa, SEA_LEVEL, turbulenceAt, windAt } from './atmosphere';
 import type { AircraftConfig } from './config';
 import type { EngineControls, EngineState } from './engine';
-import { createEngine, defaultEngineControls, stepEngine } from './engine';
+import { createEngine, defaultEngineControls, propellerThrust, stepEngine } from './engine';
 import type { Quat, Vec3 } from './math';
 import {
     add,
@@ -49,6 +49,46 @@ export type AircraftInput = {
 
 export type GroundContact = 'air' | 'gear' | 'belly' | 'water' | 'crashed';
 
+/**
+ * Влияние повреждений на физику (раздел 7.3). Модель повреждений мира пишет сюда эффекты,
+ * ядро полёта только применяет их. 1 — исправно, 0 — полностью утрачено.
+ */
+export type AircraftModifiers = {
+    elevator: number;
+    aileronLeft: number;
+    aileronRight: number;
+    rudder: number;
+    /** Доля потерянной подъёмной силы крыла: [левое, правое]. */
+    liftLoss: [number, number];
+    extraCd: number;
+    enginePower: [number, number];
+    /** Утечка топлива из каждого бака, кг/с. */
+    fuelLeakKgS: number[];
+    /** Стойки разбиты: шасси не выпускается и не держит. */
+    gearFailed: boolean;
+    /** Аварийный выпуск шасси вручную выполнен (бортинженер). */
+    manualGearDown: boolean;
+    hydraulicPumps: [boolean, boolean];
+    bayDoorsJammed: boolean;
+    flapsJammed: boolean;
+};
+
+export const intactModifiers = (tanks: number): AircraftModifiers => ({
+    elevator: 1,
+    aileronLeft: 1,
+    aileronRight: 1,
+    rudder: 1,
+    liftLoss: [0, 0],
+    extraCd: 0,
+    enginePower: [1, 1],
+    fuelLeakKgS: new Array<number>(tanks).fill(0),
+    gearFailed: false,
+    manualGearDown: false,
+    hydraulicPumps: [true, true],
+    bayDoorsJammed: false,
+    flapsJammed: false,
+});
+
 export type Loadout = {
     fuelKg: number;
     crew: number;
@@ -81,6 +121,7 @@ export type AircraftState = {
     fuelPumpOn: boolean;
     /** Ускорение в связанных осях без гравитации (для указателя скольжения и перегрузки), м/с². */
     specificForce: Vec3;
+    modifiers: AircraftModifiers;
 };
 
 export type AircraftDerived = {
@@ -202,6 +243,7 @@ export function createAircraft(config: AircraftConfig, ic: InitialConditions): A
         batteryOn: true,
         fuelPumpOn: true,
         specificForce: vec(0, 0, -GRAVITY),
+        modifiers: intactModifiers(tanks.length),
     };
 }
 
@@ -233,9 +275,11 @@ export function aerodynamics(
     const alpha = Math.atan2(airVelocityBody.z, airVelocityBody.x);
     const beta = Math.asin(clamp(airVelocityBody.y / V, -1, 1));
     const { p, q, r } = { p: state.omega.x, q: state.omega.y, r: state.omega.z };
-    const de = state.controls.elevator;
-    const da = state.controls.aileron;
-    const dr = state.controls.rudder;
+    const m = state.modifiers;
+    const de = state.controls.elevator * m.elevator;
+    const da = state.controls.aileron * 0.5 * (m.aileronLeft + m.aileronRight);
+    const dr = state.controls.rudder * m.rudder;
+    const liftFactor = 1 - 0.5 * (m.liftLoss[0] + m.liftLoss[1]);
 
     // Подъёмная сила с закрылками и сваливанием.
     const flapsCl = a.cl_flaps_delta * state.flaps;
@@ -253,6 +297,8 @@ export function aerodynamics(
         cl = linear;
     }
 
+    cl *= liftFactor;
+
     // Экранный эффект: меньше индуктивное сопротивление у земли.
     const hb = Math.max(agl, 0.5) / (b * a.ground_effect_span_factor);
     const groundEffect = hb < 1 ? (16 * hb) ** 2 / (1 + (16 * hb) ** 2) : 1;
@@ -265,6 +311,7 @@ export function aerodynamics(
         a.cd_bay_doors * state.bayDoors +
         a.cd_flaps * state.flaps +
         cdStall +
+        m.extraCd +
         0.3 * beta * beta;
     const cy = a.cy_beta * beta + a.cy_rudder * dr;
 
@@ -279,7 +326,9 @@ export function aerodynamics(
     const rHat = (r * b) / (2 * V);
     const stallRoll = stalled ? a.cl_stall_asymmetry * state.stallSide * Math.min(Math.abs(alpha) - alphaStall, 0.3) * 10 : 0;
 
-    const Cl = a.cl_beta * beta + a.cl_p * pHat + a.cl_r * rHat + a.cl_aileron * da + stallRoll;
+    // Асимметрия подъёмной силы: крыло с пробоинами опускается.
+    const liftAsymmetry = 0.1 * cl * (m.liftLoss[1] - m.liftLoss[0]);
+    const Cl = a.cl_beta * beta + a.cl_p * pHat + a.cl_r * rHat + a.cl_aileron * da + stallRoll + liftAsymmetry;
     const Cm =
         a.cm0 +
         a.cm_alpha * Math.sin(alpha) +
@@ -466,16 +515,30 @@ export function stepAircraft(state: AircraftState, input: AircraftInput, ctx: St
     s.controls.rudder = moveTowards(s.controls.rudder, -yawCmd * a.rudder_max_rad, surfaceRate * a.rudder_max_rad);
 
     // Гидравлика от насосов на двигателях → шасси, закрылки, люк (раздел 7.2).
-    const pumpsOn = state.engines.some((e) => e.mode === 'running' && e.rpm > 800);
+    const mods = state.modifiers;
+    const pumpsOn = state.engines.some((e, i) => e.mode === 'running' && e.rpm > 800 && mods.hydraulicPumps[i] === true);
 
     s.hydraulicPressure = moveTowards(state.hydraulicPressure, pumpsOn ? 1 : 0, dt / (pumpsOn ? 2 : 60));
 
     const hydraulic = s.hydraulicPressure > 0.3;
 
-    if (hydraulic) {
+    if (mods.gearFailed) {
+        // Разбитые стойки не встают на замки.
+        s.gear = moveTowards(s.gear, 0, dt / 2);
+    } else if (hydraulic) {
         s.gear = moveTowards(s.gear, input.gearDown ? 1 : 0, dt / config.gear.retract_time_s);
-        s.flaps = moveTowards(s.flaps, clamp(input.flaps, 0, 1), dt / 10);
-        s.bayDoors = moveTowards(s.bayDoors, input.bayDoorsOpen ? 1 : 0, dt / 3);
+    } else if (mods.manualGearDown) {
+        s.gear = moveTowards(s.gear, 1, dt / 4);
+    }
+
+    if (hydraulic) {
+        if (!mods.flapsJammed) {
+            s.flaps = moveTowards(s.flaps, clamp(input.flaps, 0, 1), dt / 10);
+        }
+
+        if (!mods.bayDoorsJammed) {
+            s.bayDoors = moveTowards(s.bayDoors, input.bayDoorsOpen ? 1 : 0, dt / 3);
+        }
     }
 
     s.batteryOn = input.batteryOn;
@@ -510,6 +573,15 @@ export function stepAircraft(state: AircraftState, input: AircraftInput, ctx: St
             dt,
         );
 
+        // Потеря мощности от повреждений двигателя.
+        const factor = mods.enginePower[i] ?? 1;
+
+        if (factor < 1 && next.powerW > 0) {
+            next.powerW *= factor;
+            next.thrustN = propellerThrust(config, next.powerW, tas);
+            next.fuelFlowKgS *= factor;
+        }
+
         return next;
     }) as [EngineState, EngineState];
 
@@ -520,6 +592,9 @@ export function stepAircraft(state: AircraftState, input: AircraftInput, ctx: St
     if (fuel > 0 && burn > 0) {
         s.fuelKg = s.fuelKg.map((kg) => Math.max(0, kg - (burn * kg) / fuel));
     }
+
+    // Утечки из пробитых баков.
+    s.fuelKg = s.fuelKg.map((kg, i) => Math.max(0, kg - (mods.fuelLeakKgS[i] ?? 0) * dt));
 
     // Сваливание с асимметрией: сторона выбирается ГПСЧ при входе.
     const aero = aerodynamics(config, s, airVelBody, atm.density, agl);

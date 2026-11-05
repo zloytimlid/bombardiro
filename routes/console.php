@@ -10,5 +10,5 @@ Artisan::command('inspire', function () {
 
 Artisan::command('sim:sync', function (SyncSimContent $sync) {
     $sync->handle();
-    $this->info('Театры, типы самолётов и борта загружены из resources/sim.');
-})->purpose('Load theatre and aircraft content from resources/sim into the database');
+    $this->info('Театры, типы самолётов, борта и миссии загружены из resources/sim.');
+})->purpose('Load theatres, aircraft and missions from resources/sim into the database');

@@ -1,0 +1,42 @@
+{
+    "config_version": 1,
+    "note": "зенитная артиллерия (раздел 8.4): разрывы без симуляции снарядов, осколки — вероятностно по расстоянию; все числа — игровые",
+    "types": [
+        {
+            "id": "heavy",
+            "name": "heavy flak",
+            "source": "gameplay",
+            "max_altitude_m": 8000,
+            "max_range_m": 11000,
+            "shell_speed_ms": 600,
+            "interval_s": 4,
+            "base_error_m": 300,
+            "min_error_m": 80,
+            "tracking_time_s": 30,
+            "maneuver_heading_deg": 10,
+            "maneuver_altitude_m": 90,
+            "fragments_at_10m": 6,
+            "lethal_radius_m": 100,
+            "damage_per_fragment": 4,
+            "barrage_box_m": 450
+        },
+        {
+            "id": "light",
+            "name": "light flak",
+            "source": "gameplay",
+            "max_altitude_m": 1600,
+            "max_range_m": 2800,
+            "shell_speed_ms": 850,
+            "interval_s": 0.6,
+            "base_error_m": 45,
+            "min_error_m": 12,
+            "tracking_time_s": 6,
+            "maneuver_heading_deg": 8,
+            "maneuver_altitude_m": 40,
+            "fragments_at_10m": 2,
+            "lethal_radius_m": 25,
+            "damage_per_fragment": 3,
+            "barrage_box_m": 0
+        }
+    ]
+}

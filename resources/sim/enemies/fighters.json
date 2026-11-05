@@ -1,0 +1,37 @@
+{
+    "config_version": 1,
+    "note": "истребители противника (раздел 8.4): точечная модель с ограничениями скорости и разворота; все числа — игровые",
+    "fighters": [
+        {
+            "id": "bf109g",
+            "name": "Bf 109 G",
+            "source": "gameplay",
+            "cruise_speed_ms": 125,
+            "attack_speed_ms": 165,
+            "max_turn_rate_deg_s": 20,
+            "max_climb_ms": 14,
+            "hp": 24,
+            "radius_m": 4.5,
+            "guns": { "count": 3, "rate_rpm": 600, "muzzle_velocity_ms": 750, "dispersion_mrad": 6, "range_m": 650, "damage_per_hit": 1.1 },
+            "ammo_s": 18
+        },
+        {
+            "id": "fw190a",
+            "name": "Fw 190 A",
+            "source": "gameplay",
+            "cruise_speed_ms": 130,
+            "attack_speed_ms": 160,
+            "max_turn_rate_deg_s": 19,
+            "max_climb_ms": 12,
+            "hp": 30,
+            "radius_m": 4.6,
+            "guns": { "count": 4, "rate_rpm": 650, "muzzle_velocity_ms": 720, "dispersion_mrad": 6, "range_m": 600, "damage_per_hit": 1.3 },
+            "ammo_s": 16
+        }
+    ],
+    "skills": {
+        "novice": { "aim_error_mrad": 14, "reaction_s": 3.0, "exit_hp_share": 0.7, "max_passes": 2 },
+        "experienced": { "aim_error_mrad": 8, "reaction_s": 1.8, "exit_hp_share": 0.5, "max_passes": 3 },
+        "veteran": { "aim_error_mrad": 5, "reaction_s": 1.0, "exit_hp_share": 0.3, "max_passes": 4 }
+    }
+}

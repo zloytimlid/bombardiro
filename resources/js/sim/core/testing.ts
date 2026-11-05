@@ -1,13 +1,22 @@
 import b25jJson from '../../../sim/aircraft/b25j.json';
+import milkRunJson from '../../../sim/missions/milk-run.json';
+import { createCrewAI } from './ai/crew';
 import type { AircraftInput, Loadout } from './aircraft';
 import type { AutopilotTargets } from './ai/autopilot';
 import { Autopilot } from './ai/autopilot';
 import type { AircraftConfig } from './config';
 import { parseAircraftConfig } from './config';
+import type { Station } from './config';
+import { DEFAULT_CONTENT } from './content';
+import type { Skill } from './content';
 import { vec } from './math';
+import type { MissionDefinition } from './mission/schema';
+import { parseMission } from './mission/schema';
 import { DT, Simulation } from './simulation';
 import type { Terrain } from './terrain';
-import { FlatTerrain } from './terrain';
+import { CORSICA_ALESAN, FlatTerrain } from './terrain';
+import type { Difficulty, WorldStart } from './world';
+import { MissionWorld } from './world';
 
 /** Вспомогательные функции для тестов и калибровки ядра (без рендера). */
 export const b25j: AircraftConfig = parseAircraftConfig(b25jJson);
@@ -86,3 +95,22 @@ export function flyWithAutopilot(
 }
 
 export const kmh = (ms: number): number => ms * 3.6;
+
+export const milkRun: MissionDefinition = parseMission(milkRunJson);
+
+/** Мир вылета «Милк-ран» с ИИ на всех станциях, кроме `humans`. */
+export function milkRunWorld(options: { seed?: number; difficulty?: Difficulty; skill?: Skill; humans?: Station[]; start?: WorldStart; mission?: MissionDefinition; terrain?: Terrain } = {}): MissionWorld {
+    return new MissionWorld({
+        config: b25j,
+        content: DEFAULT_CONTENT,
+        mission: options.mission ?? milkRun,
+        theatre: CORSICA_ALESAN,
+        difficulty: options.difficulty ?? 'historical',
+        skill: options.skill ?? 'experienced',
+        humans: options.humans ?? [],
+        seed: options.seed,
+        start: options.start,
+        terrain: options.terrain,
+        aiFactory: createCrewAI,
+    });
+}
