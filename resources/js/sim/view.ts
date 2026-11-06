@@ -252,7 +252,7 @@ export type MissionStatic = {
     landmarks: { id: string; position: Vec3; kind: string }[];
     beacon: Vec3;
     runway: { x: number; y: number; heading: number; length_m: number; width_m: number; elevation_m: number };
-    target: { aim: Vec3; heading: number; sections: { center: Vec3; halfLength: number; halfWidth: number }[] };
+    target: { aim: Vec3; heading: number; sections: { center: Vec3; halfLength: number; halfWidth: number; strength: number }[] };
     checklists: Record<ChecklistId, string[]>;
     codeTable: { group: string; meaning: RadioMeaning }[];
     frequencies: { tower: number; command: number; base: number };
@@ -267,7 +267,7 @@ export function buildStatic(world: MissionWorld): MissionStatic {
         landmarks: world.landmarks,
         beacon: world.beacon,
         runway: world.runway,
-        target: { aim: t.aim, heading: t.heading, sections: t.sections.map((s) => ({ center: s.center, halfLength: s.halfLength, halfWidth: s.halfWidth })) },
+        target: { aim: t.aim, heading: t.heading, sections: t.sections.map((s) => ({ center: s.center, halfLength: s.halfLength, halfWidth: s.halfWidth, strength: s.strength })) },
         checklists: world.checklistDefs(),
         codeTable: world.mission.radio.code_table,
         frequencies: world.mission.radio.frequencies_mhz,

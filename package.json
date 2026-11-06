@@ -13,7 +13,8 @@
         "lint:fix": "eslint . --fix",
         "test:js": "vitest run",
         "test:e2e": "playwright test",
-        "schemas:generate": "vitest run resources/js/sim/core/schemas.test.ts -u"
+        "schemas:generate": "vitest run resources/js/sim/core/schemas.test.ts -u",
+        "budget:bundle": "node scripts/check-bundle-budget.mjs"
     },
     "dependencies": {
         "@inertiajs/vite": "^3.0.0",
@@ -21,6 +22,7 @@
         "@laravel/echo-vue": "^2.6.3",
         "@laravel/passkeys": "^0.2.0",
         "@lucide/vue": "^1.17.0",
+        "@sentry/vue": "^10.78.0",
         "@vueuse/core": "^12.8.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

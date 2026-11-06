@@ -28,6 +28,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $locale
  * @property UserRole $role
  * @property array<string, mixed> $settings
+ * @property Carbon|null $banned_at
+ * @property string|null $ban_reason
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -62,6 +64,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
             'password' => 'hashed',
             'role' => UserRole::class,
             'settings' => 'array',
+            'banned_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
         ];
     }

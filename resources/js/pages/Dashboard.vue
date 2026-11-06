@@ -6,6 +6,7 @@ import { realtime } from '@/routes/diagnostics';
 import { index as missions, solo } from '@/routes/missions';
 import { show as training } from '@/routes/training';
 
+const { t } = useI18n();
 
 type PilotProfile = {
     callsign: string;
@@ -20,11 +21,9 @@ defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [{ title: 'Dashboard', href: dashboard() }],
+        breadcrumbs: [{ title: 'appnav.dashboard', href: dashboard() }],
     },
 });
-
-const { t } = useI18n();
 
 // Порядок станций = клавиши 1–8 (App\Domain\Aircraft\Enums\Station); без импорта симядра в главный бандл.
 const STATIONS = ['pilot', 'copilot', 'bombardier', 'navigator', 'top_gunner', 'radio', 'waist_gunner', 'tail_gunner'] as const;

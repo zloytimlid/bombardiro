@@ -23,5 +23,7 @@ export * from './radio';
 export * from './rng';
 export * from './simulation';
 export * from './terrain';
+export * from './geoTerrain';
+export * from './geographySchema';
 export * from './training';
 export * from './world';

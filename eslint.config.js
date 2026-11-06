@@ -27,6 +27,16 @@ export default tseslint.config(
     },
     js.configs.recommended,
     ...tseslint.configs.recommended,
+    {
+        // Служебные скрипты сборки и CI — в Node.
+        files: ['scripts/**/*.mjs'],
+        languageOptions: { globals: globals.node },
+    },
+    {
+        // Сценарии k6: глобальные переменные среды выполнения k6.
+        files: ['load/**/*.js'],
+        languageOptions: { globals: { __ENV: 'readonly', __VU: 'readonly', __ITER: 'readonly', open: 'readonly' } },
+    },
     ...pluginVue.configs['flat/strongly-recommended'],
     {
         files: ['**/*.vue'],

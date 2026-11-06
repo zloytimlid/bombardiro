@@ -75,6 +75,17 @@ export class Simulation {
         this.aircraftState = { ...this.aircraftState, engineFailed: failed };
     }
 
+    /** Восстановление из снапшота (миграция хоста, раздел 9.3). */
+    restore(state: { tick: number; rng: [number, number, number, number]; aircraft: AircraftState }): void {
+        this.tickCount = state.tick;
+        this.rng.setState(state.rng);
+        this.aircraftState = state.aircraft;
+    }
+
+    rngState(): [number, number, number, number] {
+        return this.rng.getState();
+    }
+
     /** Прямая правка состояния — только для тестов и тренировок. */
     patchAircraft(patch: Partial<AircraftState>): void {
         this.aircraftState = { ...this.aircraftState, ...patch };

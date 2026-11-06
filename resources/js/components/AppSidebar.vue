@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { Info, LayoutGrid, Map, Medal, Warehouse } from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,28 +16,19 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { useI18n } from '@/composables/useI18n';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
+const { t } = useI18n();
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+const mainNavItems = computed<NavItem[]>(() => [
+    { title: t('appnav.dashboard'), href: dashboard(), icon: LayoutGrid },
+    { title: t('appnav.missions'), href: '/missions', icon: Map },
+    { title: t('appnav.hangar'), href: '/hangar', icon: Warehouse },
+    { title: t('appnav.leaderboards'), href: '/leaderboards', icon: Medal },
+]);
+
+const footerNavItems = computed<NavItem[]>(() => [{ title: t('appnav.about'), href: '/about', icon: Info }]);
 </script>
 
 <template>

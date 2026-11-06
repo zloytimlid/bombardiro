@@ -1,0 +1,121 @@
+# Продакшен на одном узле (docs/ops.md). Секреты — в .env на сервере (не в репозитории).
+# Сборка и запуск:  docker compose -f compose.prod.yaml build && docker compose -f compose.prod.yaml up -d
+name: b25j-prod
+
+x-app: &app
+    build:
+        context: .
+        dockerfile: docker/php/Dockerfile
+        target: prod
+    image: b25j-app:${APP_VERSION:-latest}
+    env_file: .env
+    environment: &app-env
+        APP_ENV: production
+        APP_DEBUG: 'false'
+        LOG_CHANNEL: json
+        DB_HOST: postgres
+        REDIS_HOST: redis
+        REVERB_SERVER_HOST: 0.0.0.0
+        REVERB_SERVER_PORT: '8080'
+    depends_on:
+        postgres:
+            condition: service_healthy
+        redis:
+            condition: service_healthy
+    restart: unless-stopped
+
+services:
+    app:
+        <<: *app
+        command: ['php-fpm']
+
+    reverb:
+        <<: *app
+        command: ['php', 'artisan', 'reverb:start', '--host=0.0.0.0', '--port=8080']
+        # Один узел Reverb (2 vCPU, 4 ГБ) — ≥ 20 экипажей × 8 (раздел 13); масштабирование — REVERB_SCALING_ENABLED=true через Redis.
+        deploy:
+            resources:
+                limits: { cpus: '2', memory: 4g }
+
+    horizon:
+        <<: *app
+        command: ['php', 'artisan', 'horizon']
+
+    scheduler:
+        <<: *app
+        command: ['php', 'artisan', 'schedule:work']
+
+    web:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+            target: web
+        image: b25j-web:${APP_VERSION:-latest}
+        depends_on: [app, reverb]
+        restart: unless-stopped
+
+    caddy:
+        image: caddy:2-alpine
+        ports: ['80:80', '443:443']
+        environment:
+            APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN is required}
+        volumes:
+            - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+            - caddy_data:/data
+        depends_on: [web]
+        restart: unless-stopped
+
+    postgres:
+        image: postgres:17-alpine
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes: [postgres:/var/lib/postgresql/data]
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}']
+            interval: 5s
+            retries: 20
+        restart: unless-stopped
+
+    redis:
+        image: redis:7-alpine
+        command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+        volumes: [redis:/data]
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 5s
+            retries: 20
+        restart: unless-stopped
+
+    # Резервные копии БД: ежедневно в 03:30 UTC, проверка восстановления — 1-го числа (docs/ops.md).
+    backup:
+        image: postgres:17-alpine
+        entrypoint: ['sh', '-c']
+        command:
+            - >-
+              apk add --no-cache aws-cli >/dev/null &&
+              echo '30 3 * * * /scripts/backup.sh' > /etc/crontabs/root &&
+              echo '0 5 1 * * /scripts/restore-check.sh' >> /etc/crontabs/root &&
+              crond -f -l 2
+        environment:
+            DATABASE_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/${DB_DATABASE}
+            RESTORE_ADMIN_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/postgres
+            BACKUP_BUCKET: ${BACKUP_BUCKET:?BACKUP_BUCKET is required}
+            AWS_ACCESS_KEY_ID: ${BACKUP_AWS_ACCESS_KEY_ID}
+            AWS_SECRET_ACCESS_KEY: ${BACKUP_AWS_SECRET_ACCESS_KEY}
+            AWS_DEFAULT_REGION: ${BACKUP_AWS_REGION:-eu-central-1}
+            AWS_ENDPOINT_URL: ${BACKUP_AWS_ENDPOINT_URL:-}
+        volumes:
+            - ./docker/backup:/scripts:ro
+            - backups:/backups
+        depends_on:
+            postgres:
+                condition: service_healthy
+        restart: unless-stopped
+
+volumes:
+    postgres:
+    redis:
+    backups:
+    caddy_data:

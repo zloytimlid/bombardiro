@@ -35,4 +35,29 @@ return [
         ],
     ],
 
+    // Вход через Discord и Google (этап 5, ADR-0008): без ключей кнопки на странице входа не показываются.
+    'discord' => [
+        'client_id' => env('DISCORD_CLIENT_ID'),
+        'client_secret' => env('DISCORD_CLIENT_SECRET'),
+        'redirect' => env('APP_URL').'/auth/discord/callback',
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('APP_URL').'/auth/google/callback',
+    ],
+
+    // Голосовое СПУ (этап 6): STUN/TURN для WebRTC. Пусто — только прямые соединения (локальная сеть).
+    'voice' => [
+        'ice' => array_values(array_filter(array_map(
+            fn (string $url): ?array => $url === '' ? null : array_filter([
+                'urls' => $url,
+                'username' => str_starts_with($url, 'turn') ? env('VOICE_TURN_USERNAME') : null,
+                'credential' => str_starts_with($url, 'turn') ? env('VOICE_TURN_PASSWORD') : null,
+            ]),
+            explode(',', (string) env('VOICE_ICE_URLS', '')),
+        ))),
+    ],
+
 ];

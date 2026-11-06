@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n';
 import { Form } from '@inertiajs/vue3';
 import { useClipboard } from '@vueuse/core';
 import { Check, Copy, ScanLine } from '@lucide/vue';
@@ -24,6 +25,8 @@ import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { confirm } from '@/routes/two-factor';
 import type { TwoFactorConfigContent } from '@/types';
 
+const { t } = useI18n();
+
 type Props = {
     requiresConfirmation: boolean;
     twoFactorEnabled: boolean;
@@ -46,25 +49,25 @@ const pinInputContainerRef = useTemplateRef('pinInputContainerRef');
 const modalConfig = computed<TwoFactorConfigContent>(() => {
     if (props.twoFactorEnabled) {
         return {
-            title: 'Two-factor authentication enabled',
+            title: t('ui.two_factor_enabled'),
             description:
-                'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
+                t('ui.two_factor_enabled_hint'),
             buttonText: 'Close',
         };
     }
 
     if (showVerificationStep.value) {
         return {
-            title: 'Verify authentication code',
-            description: 'Enter the 6-digit code from your authenticator app',
+            title: t('ui.verify_code'),
+            description: t('ui.enter_6_digit'),
             buttonText: 'Continue',
         };
     }
 
     return {
-        title: 'Enable two-factor authentication',
+        title: t('ui.enable_two_factor'),
         description:
-            'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
+            t('ui.two_factor_setup_hint'),
         buttonText: 'Continue',
     };
 });
@@ -182,7 +185,7 @@ watch(
                                         <img
                                             v-if="qrCodeSvg"
                                             :src="`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrCodeSvg)}`"
-                                            alt="QR code"
+                                            :alt="t('ui.qr_code')"
                                             class="size-full"
                                         />
                                     </div>
@@ -203,7 +206,7 @@ watch(
                                 class="absolute inset-0 top-1/2 h-px w-full bg-border"
                             />
                             <span class="relative bg-card px-2 py-1"
-                                >or, enter the code manually</span
+                                >{{ t('ui.enter_code_manually') }}</span
                             >
                         </div>
 
@@ -285,14 +288,14 @@ watch(
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
                                 >
-                                    Back
+                                    {{ t('ui.back') }}
                                 </Button>
                                 <Button
                                     type="submit"
                                     class="w-auto flex-1"
                                     :disabled="processing || code.length < 6"
                                 >
-                                    Confirm
+                                    {{ t('ui.confirm') }}
                                 </Button>
                             </div>
                         </div>

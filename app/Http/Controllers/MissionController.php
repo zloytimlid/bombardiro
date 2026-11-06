@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Aircraft\Models\AircraftType;
 use App\Domain\Missions\Models\Mission;
+use App\Domain\Missions\Models\Theatre;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +19,7 @@ final class MissionController extends Controller
 {
     public function index(): Response
     {
-        $missions = Mission::query()->latestPublished()->orderBy('id')->get();
+        $missions = Mission::query()->latestPublished()->catalogOrder()->get();
 
         return Inertia::render('missions/Index', [
             'missions' => $missions->map(fn (Mission $m): array => [
@@ -30,6 +31,16 @@ final class MissionController extends Controller
                 'version' => $m->version,
                 'summary' => $m->summary(),
             ])->values(),
+            // Генератор (этап 6): театр с пулом целей и шаблон миссии — только по запросу формы.
+            'generator' => Inertia::optional(function (): ?array {
+                $theatre = Theatre::query()->where('slug', 'mto-west')->first();
+                $base = Mission::latestPublished('milk-run');
+
+                return $theatre === null || $base === null ? null : [
+                    'theatre' => $theatre->definition,
+                    'base' => $base->definition,
+                ];
+            }),
         ]);
     }
 

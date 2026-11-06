@@ -1,18 +1,30 @@
 import * as Comlink from 'comlink';
 import * as THREE from 'three';
 import type { AircraftConfig, Debrief, Difficulty, Station, TheatreConfig, WorldAction } from '@/sim/core';
-import { mountDirectionBody, parseAircraftConfig, ProceduralTerrain, STATIONS, TICK_HZ } from '@/sim/core';
+import { createTerrain, mountDirectionBody, parseAircraftConfig, parseMission, STATIONS, TICK_HZ } from '@/sim/core';
 import type { MissionStatic, WorldView } from '@/sim/view';
 import type { SimWorker } from '@/sim/worker';
 import simWorkerUrl from '@/sim/worker?worker&url';
+import type { NetBootstrapData, UserSettingsData } from '@/types/generated/net';
+import type { Volumes } from './audio/sound';
+import { createSound } from './audio/sound';
+import { indexBindings } from './input/bindings';
 import { StationInput } from './input/stationInput';
+import { api } from './net/api';
+import type { NetCallbacks, NetStatus } from './net/netSession';
+import type { VoiceCallbacks } from './net/voice';
+import { FlightLink } from './net/flightLink';
+import { NetSession } from './net/netSession';
 import { createAircraftModel } from './render/aircraftModel';
+import { NOSE_ART_URL } from './render/noseArt';
 import { createCockpit } from './render/cockpit';
 import { attitudeToThree, Q_CAMERA_IN_FRD, toThree } from './render/coords';
 import { createEntities } from './render/entities';
 import { drawPilotPanel } from './render/instruments';
 import type { GraphicsPreset } from './render/world';
+import { createRenderer } from './render/renderer';
 import { createWorld } from './render/world';
+import { inputPrefsFrom, volumesFrom, withDefaults } from './settings';
 
 /**
  * Игровой клиент этапа 2: восемь станций, переключение 1–8, ИИ на остальных местах.
@@ -34,6 +46,16 @@ export type GameFrame = {
     timeScale: number;
     markers: ScreenMarker[];
     renderScale: number;
+    /** Кооператив: роль, хост, миграция, RTT (null — одиночный режим). */
+    net: NetStatus | null;
+};
+
+/** Кооперативный вылет (этап 3): сессия, места игроков, отладочная задержка сети. */
+export type NetGameOptions = {
+    bootstrap: NetBootstrapData;
+    humans: Station[];
+    delayMs: number;
+    callbacks: Omit<NetCallbacks, 'onStatus'>;
 };
 
 export type GameOptions = {
@@ -48,7 +70,19 @@ export type GameOptions = {
     /** Отладочное ускорение сверх ×4 (только не в продакшене): игнорирует ограничения фаз. */
     maxTimeScale?: number;
     onFrame?: (frame: GameFrame) => void;
+    net?: NetGameOptions;
+    /** Настройки игрока (управление, графика, звук, доступность); null — гость. */
+    settings?: UserSettingsData | null;
+    /** Слать агрегированную телеметрию FPS/RTT (только вошедший игрок). */
+    telemetry?: boolean;
+    /** Кампания (этап 6): прочность зон борта 0…1 в начале вылета. */
+    initialZones?: Record<string, number>;
+    /** Звено (этап 6): канал звена, своё место в строю и название экипажа. */
+    flight?: { ulid: string; slot: number; name: string } | null;
 };
+
+/** Ведомые экипажи звена взлетают по очереди: 35 с на место в строю. */
+const FLIGHT_TAKEOFF_SPACING_S = 35;
 
 export type GameHandle = {
     act(action: WorldAction): void;
@@ -62,6 +96,17 @@ export type GameHandle = {
     setThrottle(value: [number, number]): void;
     restart(): Promise<void>;
     debrief(): Promise<Debrief>;
+    /** Кооператив: «ИИ на моём месте» и чат экипажа. */
+    setSeatAi(on: boolean): void;
+    sendChat(text: string): void;
+    /** Голосовое СПУ (этап 6): включить, выключить, тангента. */
+    enableVoice(iceServers: RTCIceServer[], callbacks: VoiceCallbacks): Promise<void>;
+    disableVoice(): void;
+    setTalking(on: boolean): void;
+    /** Кооператив: хост дождался выгрузки журнала и итога на сервер. */
+    flushed(): Promise<void>;
+    /** Громкость по категориям (раздел 12). */
+    setVolumes(v: Volumes): void;
     dispose(): void;
 };
 
@@ -90,20 +135,22 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
     const rawConfig: unknown = JSON.parse(JSON.stringify(options.config));
     const rawMission: unknown = JSON.parse(JSON.stringify(options.mission));
     const config: AircraftConfig = parseAircraftConfig(rawConfig);
-    const terrain = new ProceduralTerrain(options.theatre);
+    const terrain = createTerrain(options.theatre);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    let renderScale = Math.min(window.devicePixelRatio, 1.5);
+    const settings = withDefaults(options.settings);
+    const graphics = options.graphics ?? (settings.graphics === 'low' || settings.graphics === 'high' ? settings.graphics : 'medium');
+    const renderer = await createRenderer(settings.renderer === 'webgpu' ? 'webgpu' : 'webgl', graphics !== 'low');
+    let renderScale = Math.min(window.devicePixelRatio, 1.5) * settings.render_scale;
 
     renderer.setPixelRatio(renderScale);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     container.appendChild(renderer.domElement);
     renderer.domElement.style.display = 'block';
     renderer.domElement.tabIndex = 0;
 
-    const world = createWorld(terrain, options.theatre.runways, options.graphics ?? 'medium');
-    const model = createAircraftModel();
+    const world = createWorld(terrain, options.theatre.runways, graphics);
+    const model = createAircraftModel({ name: config.airframe.name, serial: config.airframe.serial, code: config.airframe.code });
+
+    model.setNoseArt(NOSE_ART_URL);
     const cockpit = createCockpit();
 
     model.root.add(cockpit.group);
@@ -112,19 +159,95 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
     const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 90000);
     const panelCtx = cockpit.panelCanvas.getContext('2d');
     const canvas = renderer.domElement;
-    const input = new StationInput(window, canvas);
+    const input = new StationInput(window, canvas, inputPrefsFrom(settings));
+    const bindings = indexBindings(inputPrefsFrom(settings).bindings);
+    const sound = createSound(window);
+
+    sound.setVolumes(volumesFrom(settings));
 
     const worker = createSimWorker();
     const sim = Comlink.wrap<SimWorker>(worker);
     let station: Station = options.station;
 
     const init = async (): Promise<{ view: WorldView; statics: MissionStatic }> =>
-        sim.init({ mode: options.mode, config: rawConfig, mission: rawMission, theatre: options.theatre, difficulty: options.difficulty, seed: options.seed, station });
+        sim.init({
+            mode: options.mode,
+            config: rawConfig,
+            mission: rawMission,
+            theatre: options.theatre,
+            difficulty: options.difficulty,
+            seed: options.seed,
+            station,
+            humans: options.net?.humans,
+            initialZones: options.initialZones,
+            takeoffDelayS: (options.flight?.slot ?? 0) * FLIGHT_TAKEOFF_SPACING_S,
+        });
 
     let { view, statics } = await init();
     let entities = createEntities(world.scene, statics);
 
     input.setStation(station, view);
+
+    // Звено: самолёты других экипажей — по каналу звена (только картинка, физика у каждого своя).
+    const flightLink = options.flight ? new FlightLink(options.flight.ulid, options.flight.slot, options.flight.name) : null;
+    const flightModels = new Map<number, ReturnType<typeof createAircraftModel>>();
+    const flightQuat = new THREE.Quaternion();
+    const updateFlight = (now: number): void => {
+        if (!flightLink) {
+            return;
+        }
+
+        // Публикует хост экипажа (у него настоящее состояние мира).
+        if (net === null || (net.role === 'host' && !net.restoring)) {
+            flightLink.publish(view, now);
+        }
+
+        const seen = new Set<number>();
+
+        for (const peer of flightLink.others(now)) {
+            let m = flightModels.get(peer.slot);
+
+            if (!m) {
+                m = createAircraftModel({ name: peer.name, serial: '', code: '' });
+                world.scene.add(m.root);
+                flightModels.set(peer.slot, m);
+            }
+
+            seen.add(peer.slot);
+            toThree({ x: peer.p[0], y: peer.p[1], z: peer.p[2] }, m.root.position);
+            attitudeToThree({ w: peer.q[0], x: peer.q[1], y: peer.q[2], z: peer.q[3] }, flightQuat);
+            m.root.quaternion.copy(flightQuat);
+            m.propellers.forEach((prop) => (prop.rotation.x += 0.9));
+        }
+
+        for (const [slot, m] of flightModels) {
+            m.root.visible = seen.has(slot);
+        }
+    };
+
+    // Кооператив: хост считает мир у себя, клиент рисует снапшоты хоста (раздел 9).
+    let netStatus: NetStatus | null = null;
+    let net: NetSession | null = null;
+
+    if (options.net) {
+        const weather = parseMission(rawMission).weather;
+
+        net = new NetSession(
+            options.net.bootstrap,
+            sim,
+            NetSession.decodeContext(config, terrain, { wind: weather.wind, turbulence_ms: weather.turbulence_ms }, statics),
+            station,
+            {
+                ...options.net.callbacks,
+                onStatus: (s) => {
+                    netStatus = s;
+                },
+            },
+            options.net.delayMs,
+        );
+        net.stationListeners.push((seat) => void applyStation(seat));
+        net.start();
+    }
 
     let cameraView: CameraView = 'station';
     let paused = false;
@@ -183,26 +306,28 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
     };
     const onContextMenu = (e: Event): void => e.preventDefault();
     const onKey = (e: KeyboardEvent): void => {
-        if (e.repeat) {
+        if (e.repeat || (e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName))) {
             return;
         }
 
-        const digit = /^Digit([1-8])$/.exec(e.code);
+        for (const action of bindings.get(e.code) ?? []) {
+            const digit = /^station_([1-8])$/.exec(action);
 
-        if (digit) {
-            const next = STATIONS[Number(digit[1]) - 1];
+            if (digit) {
+                const next = STATIONS[Number(digit[1]) - 1];
 
-            if (next) {
-                void handle.setStation(next);
+                if (next) {
+                    void handle.setStation(next);
+                }
+            } else if (action === 'external_view' && options.difficulty === 'training') {
+                handle.toggleView();
+            } else if (action === 'look_reset') {
+                look.yaw = 0;
+                look.pitch = station === 'navigator' ? -0.5 : -0.12;
+                look.fov = 70;
+            } else if (action === 'pause') {
+                handle.togglePause();
             }
-        } else if (e.code === 'KeyV' && options.difficulty === 'training') {
-            handle.toggleView();
-        } else if (e.code === 'KeyH') {
-            look.yaw = 0;
-            look.pitch = station === 'navigator' ? -0.5 : -0.12;
-            look.fov = 70;
-        } else if (e.code === 'KeyP') {
-            handle.togglePause();
         }
     };
 
@@ -253,7 +378,8 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
 
         // Тряска камеры от близких разрывов и попаданий.
         const hit = view.damage.lastHitAgoS;
-        const intensity = hit !== null && hit < 0.4 ? (0.4 - hit) * 0.25 : 0;
+        // Тряску камеры можно отключить (раздел 12, доступность).
+        const intensity = settings.camera_shake && hit !== null && hit < 0.4 ? (0.4 - hit) * 0.25 : 0;
 
         shake.set((Math.random() - 0.5) * intensity, (Math.random() - 0.5) * intensity, (Math.random() - 0.5) * intensity);
         camera.position.copy(eyeWorld).add(shake);
@@ -361,7 +487,13 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
             lowFpsSeconds = 0;
         }
 
-        if (!paused && !pending && view.phase !== 'debrief') {
+        if (net !== null && (net.role === 'client' || net.restoring)) {
+            // Клиент: свой ввод хосту, мир — интерполированные снапшоты хоста.
+            const sample = input.sample(dt, view);
+
+            net.sendInput(sample.controls, sample.actions, now);
+            view = net.view(now) ?? view;
+        } else if (!paused && !pending && view.phase !== 'debrief') {
             // ×2/×4 — только на маршруте без угроз (раздел 8.2); отладочное ×16 — без ограничений.
             const scale = timeScale > 4 || view.canAccelerate ? timeScale : 1;
 
@@ -375,11 +507,13 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
                 pending = true;
 
                 const sample = input.sample(dt, view);
+                const remote = net?.takeRemoteInputs() ?? [];
 
                 void sim
-                    .advance(sample, steps)
+                    .advance(sample, steps, remote)
                     .then((next) => {
                         view = next;
+                        void net?.afterHostFrame(next, performance.now());
                     })
                     .finally(() => {
                         pending = false;
@@ -391,6 +525,7 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
 
         placeCamera();
         animateModel(dt);
+        updateFlight(now);
         entities.update(view, dt);
         world.update(camera.position.x, -camera.position.z);
 
@@ -401,29 +536,51 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
 
         renderer.render(world.scene, camera);
 
+        if (frame % 2 === 0) {
+            sound.update(view, station);
+        }
+
         if (frame % 3 === 0) {
             markers = computeMarkers();
-            options.onFrame?.({ view, statics, fps, paused, camera: cameraView, scope: input.scope, pointerLocked: input.pointerLocked, timeScale, markers, renderScale });
+            options.onFrame?.({ view, statics, fps, paused, camera: cameraView, scope: input.scope, pointerLocked: input.pointerLocked, timeScale, markers, renderScale, net: netStatus });
         }
     };
+
+    async function applyStation(next: Station): Promise<void> {
+        if (next === station) {
+            return;
+        }
+
+        station = next;
+
+        // У клиента мир в воркере не идёт — станция нужна только для ввода и камеры.
+        if (net === null || net.role === 'host') {
+            view = await sim.setStation(next);
+        }
+
+        input.setStation(next, view);
+        look.yaw = 0;
+        look.pitch = next === 'navigator' ? -0.5 : -0.12;
+        look.fov = 70;
+
+        if (document.pointerLockElement === canvas) {
+            document.exitPointerLock();
+        }
+    }
 
     const handle: GameHandle = {
         act: (action) => input.push(action),
         setStation: async (next) => {
-            if (next === station) {
+            if (net !== null) {
+                // Кооператив: место через сервер (409 — занято), переход через 3 с (раздел 6.7).
+                if (next !== station && netStatus?.seatChangeAt == null) {
+                    await net.requestSeat(next);
+                }
+
                 return;
             }
 
-            station = next;
-            view = await sim.setStation(next);
-            input.setStation(next, view);
-            look.yaw = 0;
-            look.pitch = next === 'navigator' ? -0.5 : -0.12;
-            look.fov = 70;
-
-            if (document.pointerLockElement === canvas) {
-                document.exitPointerLock();
-            }
+            await applyStation(next);
         },
         toggleView: () => {
             if (options.difficulty === 'training') {
@@ -433,17 +590,30 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
         toggleScope: () => input.toggleScope(),
         togglePause: () => handle.setPaused(!paused),
         setPaused: (value) => {
-            paused = value;
+            // В кооперативе мир общий — пауза недоступна.
+            paused = net === null && value;
+            sound.setPaused(paused);
             last = performance.now();
         },
         setTimeScale: (value) => {
-            timeScale = Math.min(Math.max(1, value), options.maxTimeScale ?? 4);
+            // В кооперативе ускоряет только хост; клиенты видят ускорение через снапшоты.
+            timeScale = net !== null && net.role !== 'host' ? 1 : Math.min(Math.max(1, value), options.maxTimeScale ?? 4);
         },
         setDemo: async (enabled) => {
+            if (net !== null) {
+                net.setSeatAi(enabled);
+
+                return;
+            }
+
             await sim.setDemo(enabled);
         },
         setThrottle: (value) => input.setThrottle(value),
         restart: async () => {
+            if (net !== null) {
+                return;
+            }
+
             entities.dispose();
             ({ view, statics } = await init());
             entities = createEntities(world.scene, statics);
@@ -451,8 +621,27 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
             accumulator = 0;
         },
         debrief: async () => sim.debrief(),
+        setSeatAi: (on) => net?.setSeatAi(on),
+        sendChat: (text) => net?.sendChat(text),
+        enableVoice: async (ice, callbacks) => net?.enableVoice(ice, callbacks, volumesFrom(settings).intercom),
+        disableVoice: () => net?.disableVoice(),
+        setTalking: (on) => net?.setTalking(on),
+        flushed: async () => net?.flushed(),
+        setVolumes: (v) => sound.setVolumes(v),
         dispose: () => {
             disposed = true;
+
+            if (telemetryTimer !== null) {
+                window.clearInterval(telemetryTimer);
+            }
+
+            net?.dispose();
+            flightLink?.dispose();
+            flightModels.forEach((m) => {
+                world.scene.remove(m.root);
+                m.dispose();
+            });
+            sound.dispose();
             observer.disconnect();
             input.dispose();
             canvas.removeEventListener('mousedown', onMouseDown);
@@ -470,6 +659,17 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
             canvas.remove();
         },
     };
+
+    // Телеметрия (раздел 13): средний FPS и RTT раз в 30 с, только агрегатом.
+    let telemetryTimer: number | null = null;
+
+    if (options.telemetry) {
+        telemetryTimer = window.setInterval(() => {
+            if (!document.hidden) {
+                void api('POST', '/api/telemetry', { fps: Math.round(fps), preset: graphics, rtt_ms: netStatus?.rttMs ?? null, mode: net ? 'crew' : options.mode === 'training' ? 'training' : 'solo' }).catch(() => undefined);
+            }
+        }, 30000);
+    }
 
     requestAnimationFrame(tick);
     canvas.focus();

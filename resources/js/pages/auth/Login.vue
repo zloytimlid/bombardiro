@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n';
+import SocialLogin from '@/components/SocialLogin.vue';
 import { Form, Head } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -13,10 +15,12 @@ import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import PasskeyVerify from '@/components/PasskeyVerify.vue';
 
+const { t } = useI18n();
+
 defineOptions({
     layout: {
-        title: 'Log in to your account',
-        description: 'Enter your email and password below to log in',
+        title: 'ui.login_title',
+        description: 'ui.login_description',
     },
 });
 
@@ -27,7 +31,7 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Log in" />
+    <Head :title="t('ui.log_in')" />
 
     <div
         v-if="status"
@@ -46,7 +50,7 @@ defineProps<{
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">{{ t('ui.email_address') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -55,21 +59,21 @@ defineProps<{
                     v-focus
                     :tabindex="1"
                     autocomplete="email"
-                    placeholder="email@example.com"
+                    :placeholder="t('ui.email_placeholder')"
                 />
                 <InputError :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
                 <div class="flex items-center justify-between">
-                    <Label for="password">Password</Label>
+                    <Label for="password">{{ t('ui.password') }}</Label>
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
                         class="text-sm"
                         :tabindex="5"
                     >
-                        Forgot your password?
+                        {{ t('ui.forgot_your_password') }}
                     </TextLink>
                 </div>
                 <PasswordInput
@@ -78,7 +82,7 @@ defineProps<{
                     required
                     :tabindex="2"
                     autocomplete="current-password"
-                    placeholder="Password"
+                    :placeholder="t('ui.password')"
                 />
                 <InputError :message="errors.password" />
             </div>
@@ -86,7 +90,7 @@ defineProps<{
             <div class="flex items-center justify-between">
                 <Label for="remember" class="flex items-center space-x-3">
                     <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <span>Remember me</span>
+                    <span>{{ t('ui.remember_me') }}</span>
                 </Label>
             </div>
 
@@ -98,13 +102,15 @@ defineProps<{
                 data-test="login-button"
             >
                 <Spinner v-if="processing" />
-                Log in
+                {{ t('ui.log_in') }}
             </Button>
         </div>
 
         <div class="text-center text-sm text-muted-foreground">
-            Don't have an account?
-            <TextLink :href="register()" :tabindex="5">Sign up</TextLink>
+            {{ t('ui.no_account') }}
+            <TextLink :href="register()" :tabindex="5">{{ t('ui.sign_up') }}</TextLink>
         </div>
     </Form>
+
+    <SocialLogin class="mt-4" />
 </template>

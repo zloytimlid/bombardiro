@@ -33,7 +33,7 @@ import { createRadio, decode, stepRadio, transmit } from './radio';
 import { hash32, Rng } from './rng';
 import { DT, hashState, Simulation, TICK_HZ } from './simulation';
 import type { Runway, Terrain, TheatreConfig } from './terrain';
-import { ProceduralTerrain } from './terrain';
+import { createTerrain } from './geoTerrain';
 
 /**
  * Мир вылета (этап 2): бомбардировщик, 8 станций, ИИ-экипаж, повреждения, зенитки,
@@ -83,6 +83,53 @@ export type TargetRuntime = { def: MissionTarget; aim: Vec3; heading: number; se
 export type Impact = { bombId: number; typeId: string; position: Vec3; missM: number; armed: boolean; tick: number; onTarget: boolean };
 
 export type Wingman = { id: number; slot: Vec3; position: Vec3; velocity: Vec3; joined: boolean };
+
+/** Сериализуемое состояние мира (снапшот миграции хоста). */
+export type WorldStateV1 = {
+    v: 1;
+    sim: { tick: number; rng: [number, number, number, number]; aircraft: AircraftState };
+    rng: [number, number, number, number];
+    phase: Phase;
+    phaseStartTick: number;
+    pilot: FlightControls;
+    copilot: CopilotControls;
+    copilotFlight: FlightControls;
+    orders: PilotOrders;
+    sight: BombsightState;
+    doorsCommand: boolean;
+    rack: string[];
+    releaseQueue: { typeId: string; tick: number; armed: boolean }[];
+    bombs: FallingBomb[];
+    impacts: Impact[];
+    fighters: Fighter[];
+    batteries: FlakBattery[];
+    bursts: FlakBurst[];
+    wingmen: Wingman[];
+    targetId: string;
+    sections: Record<string, number[]>;
+    knownTargetId: string;
+    triggersFired: string[];
+    recallKnown: boolean;
+    returnFromLeg?: number | null;
+    outcome: Outcome | null;
+    aircraftLost: boolean;
+    crew: CrewState;
+    damage: DamageState;
+    checklists: ChecklistState;
+    mounts: MountState[];
+    mountCommands: Record<string, MountCommand>;
+    nav: NavigatorState;
+    radio: RadioState;
+    events: WorldEvent[];
+    metrics: Metrics;
+    track: { t: number; x: number; y: number; z: number }[];
+    wind: WeatherConfig['wind'];
+    nextId: number;
+    announcedCourse: number | null;
+    lastCourseTick: number;
+    prevBomberPosition: Vec3;
+    lastFlakTick: number;
+};
 
 export type Outcome = 'landed' | 'belly_landed' | 'ditched' | 'crashed' | 'bailed_out' | 'landed_off_field';
 
@@ -153,6 +200,10 @@ export type WorldOptions = {
     aiDisabled?: Station[];
     /** Своя логика фаз (тренировки); true — стандартная логика этого тика пропускается. */
     phaseHook?: (world: MissionWorld) => boolean;
+    /** Кампания (этап 6): прочность зон борта в начале вылета, доля 0…1 от полной. */
+    initialZones?: Record<string, number>;
+    /** Звено (этап 6): задержка взлёта по месту в строю, с (ведомые экипажи — после ведущего). */
+    takeoffDelayS?: number;
 };
 
 export type Metrics = {
@@ -171,6 +222,8 @@ export type Metrics = {
 };
 
 const DEFAULT_INTERVAL_TICKS = 6;
+/** Компенсация задержки — не более 150 мс (раздел 9.1). */
+export const MAX_LAG_TICKS = Math.round(0.15 * 60);
 const isaDensityRatio = (altitude: number): number => isa(altitude).density / SEA_LEVEL.density;
 const BOMBER_RADIUS_M = 11;
 const MAX_BULLETS = 400;
@@ -220,7 +273,8 @@ export class MissionWorld {
     readonly checklists: ChecklistState;
     readonly mounts: MountState[];
     readonly mountCommands: Record<string, MountCommand> = {};
-    readonly waypoints: WaypointRuntime[];
+    /** Маршрут; при возврате до цели остаток заменяется обратным путём (rerouteHome). */
+    waypoints: WaypointRuntime[];
     readonly landmarks: { id: string; position: Vec3; kind: string }[];
     readonly beacon: Vec3;
     readonly tables = new Map<string, BallisticTable>();
@@ -252,6 +306,11 @@ export class MissionWorld {
     alternateTargets: TargetRuntime[];
     triggersFired = new Set<string>();
     recallKnown = false;
+    /** Номер участка, на котором прервали задание (возврат до цели), — для маршрута домой и снапшота. */
+    returnFromLeg: number | null = null;
+    /** Задержка взлёта (звено): ИИ-пилот ждёт на полосе. */
+    takeoffDelayS = 0;
+    private plannedWaypoints: WaypointRuntime[] = [];
     outcome: Outcome | null = null;
     aircraftLost = false;
     humans: Station[];
@@ -260,6 +319,9 @@ export class MissionWorld {
     readonly track: { t: number; x: number; y: number; z: number }[] = [];
     readonly aiDisabled: Station[];
     private readonly phaseHook: ((world: MissionWorld) => boolean) | null;
+    /** Задержка удалённых стрелков по станциям, тики (раздел 9.1). */
+    readonly stationLagTicks: Partial<Record<Station, number>> = {};
+    private readonly fighterHistory = new Map<number, Vec3[]>();
     private nextId = 1;
     private announcedCourse: number | null = null;
     private lastCourseTick = -100000;
@@ -275,7 +337,7 @@ export class MissionWorld {
         this.mission = mission;
         this.theatre = theatre;
         this.difficulty = options.difficulty;
-        this.terrain = options.terrain ?? new ProceduralTerrain(theatre);
+        this.terrain = options.terrain ?? createTerrain(theatre);
         this.humans = [...(options.humans ?? [])];
         this.aiFactory = options.aiFactory ?? null;
         this.aiDisabled = options.aiDisabled ?? [];
@@ -299,6 +361,7 @@ export class MissionWorld {
             position: toEnu(theatre, w.lat, w.lon, w.alt_m),
             speedMs: w.speed_kmh !== undefined ? w.speed_kmh / 3.6 : null,
         }));
+        this.plannedWaypoints = this.waypoints.map((w) => ({ ...w, position: { ...w.position } }));
         this.landmarks = mission.landmarks.map((l) => ({ id: l.id, position: toEnu(theatre, l.lat, l.lon), kind: l.kind }));
         this.beacon = toEnu(theatre, mission.radio.beacon.lat, mission.radio.beacon.lon);
         this.target = this.buildTarget(mission.target);
@@ -358,6 +421,16 @@ export class MissionWorld {
 
         this.crew = createCrew(options.skill ?? 'experienced', this.humans);
         this.damage = createDamage(config);
+        this.takeoffDelayS = Math.max(0, options.takeoffDelayS ?? 0);
+
+        // Неотремонтированные повреждения кампании: доля прочности зон.
+        for (const [zone, share] of Object.entries(options.initialZones ?? {})) {
+            const def = config.damage_model.value.zones.find((z) => z.id === zone);
+
+            if (def && Number.isFinite(share)) {
+                this.damage.zoneHp[def.id] = def.hp * Math.min(1, Math.max(0.05, share));
+            }
+        }
         this.checklists = createChecklists();
         this.mounts = createMounts(config, this.content.gun);
 
@@ -1041,9 +1114,30 @@ export class MissionWorld {
 
     private spawnBullet = (b: Omit<Bullet, 'id'>): void => {
         if (this.bullets.length < MAX_BULLETS) {
-            this.bullets.push({ ...b, id: this.nextId++ });
+            const station = b.owner === 'bomber' && b.mount !== null ? this.mounts.find((m) => m.id === b.mount)?.station : undefined;
+            const lag = station === undefined ? 0 : (this.stationLagTicks[station] ?? 0);
+
+            this.bullets.push({ ...b, id: this.nextId++, lagTicks: lag });
         }
     };
+
+    /**
+     * Задержка удалённого стрелка: хост откатывает цели на RTT/2, не более 150 мс (раздел 9.1).
+     */
+    setStationLag(station: Station, rttMs: number): void {
+        this.stationLagTicks[station] = Math.min(Math.round((rttMs / 2 / 1000) * TICK_HZ), MAX_LAG_TICKS);
+    }
+
+    /** Положение истребителя `lag` тиков назад (история последних тиков). */
+    fighterPositionAt(f: Fighter, lag: number): Vec3 {
+        const history = this.fighterHistory.get(f.id);
+
+        if (lag <= 0 || history === undefined || history.length === 0) {
+            return f.position;
+        }
+
+        return history[Math.max(0, history.length - 1 - lag)] ?? f.position;
+    }
 
     private stepGuns(dt: number): void {
         const a = this.sim.aircraft;
@@ -1090,9 +1184,11 @@ export class MissionWorld {
                     }
 
                     const type = fighterType(this.content, f.typeId);
-                    const prev = sub(f.position, scale(f.velocity, dt));
+                    const lag = bullet.lagTicks ?? 0;
+                    const now = this.fighterPositionAt(f, lag);
+                    const prev = lag > 0 ? this.fighterPositionAt(f, lag + 1) : sub(f.position, scale(f.velocity, dt));
 
-                    if (segmentSphere(sub(from, prev), sub(to, f.position), vec(), type.radius_m) !== null) {
+                    if (segmentSphere(sub(from, prev), sub(to, now), vec(), type.radius_m) !== null) {
                         this.hitFighter(f, bullet);
                         bullet.ageS = Infinity;
                         break;
@@ -1203,6 +1299,25 @@ export class MissionWorld {
         }
 
         this.fighters = this.fighters.filter((f) => !f.removed);
+
+        // История положений для компенсации задержки стрелков.
+        for (const f of this.fighters) {
+            const history = this.fighterHistory.get(f.id) ?? [];
+
+            history.push({ ...f.position });
+
+            if (history.length > MAX_LAG_TICKS + 2) {
+                history.shift();
+            }
+
+            this.fighterHistory.set(f.id, history);
+        }
+
+        for (const id of this.fighterHistory.keys()) {
+            if (!this.fighters.some((f) => f.id === id)) {
+                this.fighterHistory.delete(id);
+            }
+        }
     }
 
     private stepFlak(dt: number): void {
@@ -1305,6 +1420,12 @@ export class MissionWorld {
     setPhase(phase: Phase): void {
         if (phase === this.phase) {
             return;
+        }
+
+        // Возврат до цели (отказ, отзыв): домой обратным путём по пройденным точкам — их высоты
+        // уже проверены над рельефом; дальше — заход на посадку.
+        if (phase === 'return' && (this.phase === 'formup' || this.phase === 'route' || this.phase === 'bomb_run') && this.returnFromLeg === null) {
+            this.rerouteHome(this.nav.legIndex);
         }
 
         // Пропущенные пункты чек-листов уходящей фазы.
@@ -1426,6 +1547,20 @@ export class MissionWorld {
         if (this.phase !== 'preflight' && this.phase !== 'takeoff' && this.phase !== 'landing' && ground && groundSpeed < 2) {
             this.finish(a.contact === 'water' ? 'ditched' : this.landingOutcome());
         }
+    }
+
+    /** Остаток маршрута после участка `fromLeg` — пройденные точки в обратном порядке и заход. */
+    private rerouteHome(fromLeg: number): void {
+        const planned = this.plannedWaypoints;
+        const leg = Math.min(Math.max(fromLeg, 1), planned.length - 1);
+        const passed = planned.slice(1, leg).filter((w) => w.type === 'turn' || w.type === 'formup' || w.type === 'ip');
+        const back = [...passed].reverse().map((w) => ({ ...w, id: `${w.id}-back`, type: 'turn' as const, position: { ...w.position } }));
+        const approach = planned.filter((w) => w.type === 'initial_approach' || w.type === 'final' || w.type === 'base').map((w) => ({ ...w, position: { ...w.position } }));
+
+        this.returnFromLeg = leg;
+        this.waypoints = [...planned.slice(0, leg).map((w) => ({ ...w, position: { ...w.position } })), ...back, ...approach];
+        this.nav.legIndex = Math.min(leg, this.waypoints.length - 1);
+        this.event('reroute_home', { from_leg: leg, via: back.map((w) => w.id) });
     }
 
     landingOutcome(): Outcome {
@@ -1714,7 +1849,8 @@ export class MissionWorld {
 
     /** Применить непрерывный ввод игрока на его станции. */
     applyHuman(station: Station, controls: HumanControls): void {
-        if (!isActive(this.member(station))) {
+        // Место ведёт ИИ («ИИ на моём месте», игрок отключился) — ввод игрока не применяется.
+        if (!isActive(this.member(station)) || !this.humans.includes(station)) {
             return;
         }
 
@@ -1950,6 +2086,140 @@ export class MissionWorld {
         for (let i = 0; i < ticks && this.phase !== 'debrief'; i++) {
             this.step();
         }
+    }
+
+    /**
+     * Полное состояние мира для миграции хоста (раздел 9.3): JSON без функций.
+     * Состояние контроллеров ИИ не сохраняется — после восстановления они создаются заново.
+     */
+    exportState(): WorldStateV1 {
+        const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
+        return clone({
+            v: 1 as const,
+            sim: { tick: this.sim.tick, rng: this.sim.rngState(), aircraft: this.sim.aircraft },
+            rng: this.rng.getState(),
+            phase: this.phase,
+            phaseStartTick: this.phaseStartTick,
+            pilot: this.pilot,
+            copilot: this.copilot,
+            copilotFlight: this.copilotFlight,
+            orders: this.orders,
+            sight: this.sight,
+            doorsCommand: this.doorsCommand,
+            rack: this.rack,
+            releaseQueue: this.releaseQueue,
+            bombs: this.bombs,
+            impacts: this.impacts,
+            fighters: this.fighters,
+            batteries: this.batteries,
+            bursts: this.bursts,
+            wingmen: this.wingmen,
+            targetId: this.target.def.id,
+            sections: Object.fromEntries([this.target, ...this.alternateTargets].map((t) => [t.def.id, t.sections.map((s) => s.damage)])),
+            knownTargetId: this.knownTargetId,
+            triggersFired: [...this.triggersFired],
+            recallKnown: this.recallKnown,
+            returnFromLeg: this.returnFromLeg,
+            outcome: this.outcome,
+            aircraftLost: this.aircraftLost,
+            crew: this.crew,
+            damage: this.damage,
+            checklists: this.checklists,
+            mounts: this.mounts,
+            mountCommands: this.mountCommands,
+            nav: this.nav,
+            radio: this.radio,
+            events: this.events,
+            metrics: this.metrics,
+            track: this.track,
+            wind: this.weather.wind,
+            nextId: this.nextId,
+            announcedCourse: this.announcedCourse,
+            lastCourseTick: this.lastCourseTick,
+            prevBomberPosition: this.prevBomberPosition,
+            lastFlakTick: this.lastFlakTick,
+        });
+    }
+
+    /** Продолжить вылет с сохранённого состояния (новый хост). */
+    restoreState(state: WorldStateV1): void {
+        const s = JSON.parse(JSON.stringify(state)) as WorldStateV1;
+        const assignInto = <T extends object>(target: T, source: T): void => {
+            for (const key of Object.keys(target)) {
+                delete (target as Record<string, unknown>)[key];
+            }
+
+            Object.assign(target, source);
+        };
+
+        this.sim.restore(s.sim);
+        this.rng.setState(s.rng);
+        this.phase = s.phase;
+        this.phaseStartTick = s.phaseStartTick;
+        this.pilot = s.pilot;
+        this.copilot = s.copilot;
+        this.copilotFlight = s.copilotFlight;
+        this.orders = s.orders;
+        this.sight = s.sight;
+        this.doorsCommand = s.doorsCommand;
+        this.rack = s.rack;
+        this.releaseQueue = s.releaseQueue;
+        this.bombs = s.bombs;
+        this.impacts = s.impacts;
+        // JSON не хранит Infinity — минимальная дистанция истребителя восстанавливается.
+        this.fighters = s.fighters.map((f) => ({ ...f, closestRange: f.closestRange ?? Infinity }));
+        this.batteries = s.batteries;
+        this.bursts = s.bursts;
+        this.wingmen = s.wingmen;
+        this.bullets = [];
+
+        const all = [this.target, ...this.alternateTargets];
+        const current = all.find((t) => t.def.id === s.targetId) ?? this.target;
+
+        for (const t of all) {
+            (s.sections[t.def.id] ?? []).forEach((d, i) => {
+                const section = t.sections[i];
+
+                if (section) {
+                    section.damage = d;
+                }
+            });
+        }
+
+        this.target = current;
+        this.alternateTargets = all.filter((t) => t !== current);
+        this.knownTargetId = s.knownTargetId;
+        this.triggersFired = new Set(s.triggersFired);
+        this.recallKnown = s.recallKnown;
+        // Маршрут — функция миссии и места прерывания: восстанавливаем его, а не храним целиком.
+        this.waypoints = this.plannedWaypoints.map((w) => ({ ...w, position: { ...w.position } }));
+        this.returnFromLeg = null;
+
+        if (s.returnFromLeg !== undefined && s.returnFromLeg !== null) {
+            this.rerouteHome(s.returnFromLeg);
+        }
+        this.outcome = s.outcome;
+        this.aircraftLost = s.aircraftLost;
+        assignInto(this.crew, s.crew);
+        assignInto(this.damage, s.damage);
+        assignInto(this.checklists, s.checklists);
+        this.mounts.splice(0, this.mounts.length, ...s.mounts);
+        assignInto(this.mountCommands, s.mountCommands);
+        assignInto(this.nav, s.nav);
+        assignInto(this.radio, s.radio);
+        this.events.splice(0, this.events.length, ...s.events);
+        assignInto(this.metrics, s.metrics);
+        this.track.splice(0, this.track.length, ...s.track);
+        this.weather.wind = s.wind;
+        this.nextId = s.nextId;
+        this.announcedCourse = s.announcedCourse;
+        this.lastCourseTick = s.lastCourseTick;
+        this.prevBomberPosition = s.prevBomberPosition;
+        this.lastFlakTick = s.lastFlakTick;
+        this.fighterHistory.clear();
+        this.ai = {};
+        this.rebuildAi();
     }
 
     /** Хэш мира для проверки детерминизма. */

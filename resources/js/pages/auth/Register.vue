@@ -8,25 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useI18n } from '@/composables/useI18n';
+import SocialLogin from '@/components/SocialLogin.vue';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
+
+const { t } = useI18n();
 
 defineProps<{
     passwordRules: string;
 }>();
 
-const { t } = useI18n();
-
 defineOptions({
     layout: {
-        title: 'Create an account',
-        description: 'Enter your details below to create your account',
+        title: 'ui.register_title',
+        description: 'ui.register_description',
     },
 });
 </script>
 
 <template>
-    <Head title="Register" />
+    <Head :title="t('ui.register')" />
 
     <Form
         v-bind="store.form()"
@@ -36,7 +37,7 @@ defineOptions({
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="name">Name</Label>
+                <Label for="name">{{ t('ui.name') }}</Label>
                 <Input
                     id="name"
                     type="text"
@@ -45,13 +46,13 @@ defineOptions({
                     :tabindex="1"
                     autocomplete="name"
                     name="name"
-                    placeholder="Full name"
+                    :placeholder="t('ui.full_name')"
                 />
                 <InputError :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">{{ t('ui.email_address') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -59,7 +60,7 @@ defineOptions({
                     :tabindex="2"
                     autocomplete="email"
                     name="email"
-                    placeholder="email@example.com"
+                    :placeholder="t('ui.email_placeholder')"
                 />
                 <InputError :message="errors.email" />
             </div>
@@ -76,7 +77,7 @@ defineOptions({
                     :tabindex="2"
                     autocomplete="nickname"
                     name="callsign"
-                    placeholder="Yossarian"
+                    :placeholder="t('ui.name_placeholder')"
                     :title="t('auth.callsign_hint')"
                 />
                 <p class="text-xs text-muted-foreground">
@@ -86,28 +87,28 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="password">Password</Label>
+                <Label for="password">{{ t('ui.password') }}</Label>
                 <PasswordInput
                     id="password"
                     required
                     :tabindex="3"
                     autocomplete="new-password"
                     name="password"
-                    placeholder="Password"
+                    :placeholder="t('ui.password')"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="password_confirmation">Confirm password</Label>
+                <Label for="password_confirmation">{{ t('ui.confirm_password') }}</Label>
                 <PasswordInput
                     id="password_confirmation"
                     required
                     :tabindex="4"
                     autocomplete="new-password"
                     name="password_confirmation"
-                    placeholder="Confirm password"
+                    :placeholder="t('ui.confirm_password')"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />
@@ -121,18 +122,20 @@ defineOptions({
                 data-test="register-user-button"
             >
                 <Spinner v-if="processing" />
-                Create account
+                {{ t('ui.create_account') }}
             </Button>
         </div>
 
         <div class="text-center text-sm text-muted-foreground">
-            Already have an account?
+            {{ t('ui.have_account') }}
             <TextLink
                 :href="login()"
                 class="underline underline-offset-4"
                 :tabindex="6"
-                >Log in</TextLink
+                >{{ t('ui.log_in') }}</TextLink
             >
         </div>
     </Form>
+
+    <SocialLogin class="mt-4" />
 </template>

@@ -1,0 +1,23 @@
+# Продакшен-образ (docker/php/Dockerfile, стадия prod) копирует проект целиком — без секретов и мусора.
+.env
+.env.*
+!.env.example
+.git
+node_modules
+vendor
+public/build
+public/hot
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/k6
+bootstrap/cache/*.php
+test-results
+playwright-report
+coverage
+resources/audio/menu/*.mp3
+resources/audio/menu/*.ogg
+resources/audio/menu/*.m4a
+resources/audio/menu/*.wav
+*.pdf

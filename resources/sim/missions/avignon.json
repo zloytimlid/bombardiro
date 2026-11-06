@@ -1,0 +1,617 @@
+{
+    "$schema": "../schemas/mission.schema.json",
+    "id": "avignon",
+    "version": 1,
+    "title": {
+        "ru": "Авиньон",
+        "en": "Avignon"
+    },
+    "historical_date": null,
+    "theatre": "mto-west",
+    "seed": 194408,
+    "difficulty": "normal",
+    "placeholder": true,
+    "todo": "TODO(history): миссия «по мотивам» — дата, мост, состав группы, высоты и ПВО не по документам; заменить по ORB 340-й группы (август 1944)",
+    "weather": {
+        "clouds": [
+            {
+                "base_m": 2400,
+                "top_m": 2700,
+                "coverage": 0.2
+            }
+        ],
+        "visibility_m": 35000,
+        "wind": [
+            {
+                "altitude_m": 0,
+                "from_deg": 320,
+                "speed_ms": 6
+            },
+            {
+                "altitude_m": 3000,
+                "from_deg": 330,
+                "speed_ms": 12
+            }
+        ],
+        "turbulence_ms": 0.8
+    },
+    "time_of_day": "08:40",
+    "start": {
+        "runway": "36",
+        "engines_running": false
+    },
+    "waypoints": [
+        {
+            "id": "takeoff",
+            "type": "takeoff",
+            "lat": 42.2,
+            "lon": 9.5,
+            "alt_m": 15
+        },
+        {
+            "id": "formup",
+            "type": "formup",
+            "lat": 42.326612,
+            "lon": 9.572757,
+            "alt_m": 1200
+        },
+        {
+            "id": "wp1",
+            "type": "turn",
+            "lat": 42.75,
+            "lon": 9.75,
+            "alt_m": 2400
+        },
+        {
+            "id": "wp2",
+            "type": "turn",
+            "lat": 43.15,
+            "lon": 9.0,
+            "alt_m": 3600
+        },
+        {
+            "id": "wp3",
+            "type": "turn",
+            "lat": 43.1,
+            "lon": 6.9,
+            "alt_m": 3600
+        },
+        {
+            "id": "landfall",
+            "type": "turn",
+            "lat": 43.42,
+            "lon": 6.35,
+            "alt_m": 3600
+        },
+        {
+            "id": "ip",
+            "type": "ip",
+            "lat": 44.0,
+            "lon": 5.45,
+            "alt_m": 3600
+        },
+        {
+            "id": "target",
+            "type": "target",
+            "lat": 43.935,
+            "lon": 4.795,
+            "alt_m": 3600
+        },
+        {
+            "id": "rally",
+            "type": "rally",
+            "lat": 43.6,
+            "lon": 4.65,
+            "alt_m": 3400
+        },
+        {
+            "id": "coast-out",
+            "type": "turn",
+            "lat": 43.25,
+            "lon": 5.0,
+            "alt_m": 3000
+        },
+        {
+            "id": "wp4",
+            "type": "turn",
+            "lat": 43.0,
+            "lon": 7.3,
+            "alt_m": 2400
+        },
+        {
+            "id": "cap-corse-n",
+            "type": "turn",
+            "lat": 43.15,
+            "lon": 9.55,
+            "alt_m": 2400
+        },
+        {
+            "id": "wp5",
+            "type": "turn",
+            "lat": 42.6,
+            "lon": 9.75,
+            "alt_m": 1500
+        },
+        {
+            "id": "initial",
+            "type": "initial_approach",
+            "lat": 42.064344,
+            "lon": 9.597009,
+            "alt_m": 700
+        },
+        {
+            "id": "final",
+            "type": "final",
+            "lat": 42.114085,
+            "lon": 9.5,
+            "alt_m": 480
+        },
+        {
+            "id": "base",
+            "type": "base",
+            "lat": 42.2,
+            "lon": 9.5,
+            "alt_m": 15
+        }
+    ],
+    "target": {
+        "id": "rhone-rail-bridge",
+        "type": "bridge",
+        "name": {
+            "ru": "Железнодорожный мост через Рону (условный)",
+            "en": "Railway bridge over the Rhône (notional)"
+        },
+        "aim_point": {
+            "lat": 43.935,
+            "lon": 4.795
+        },
+        "elevation_m": 20,
+        "heading_deg": 95,
+        "sections": [
+            {
+                "id": "span1",
+                "offset_m": [
+                    -100,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 9,
+                "strength": 1.0
+            },
+            {
+                "id": "span2",
+                "offset_m": [
+                    -60,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 9,
+                "strength": 1.0
+            },
+            {
+                "id": "span3",
+                "offset_m": [
+                    -20,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 9,
+                "strength": 1.0
+            },
+            {
+                "id": "span4",
+                "offset_m": [
+                    20,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 9,
+                "strength": 1.0
+            },
+            {
+                "id": "span5",
+                "offset_m": [
+                    60,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 9,
+                "strength": 1.0
+            },
+            {
+                "id": "span6",
+                "offset_m": [
+                    100,
+                    0
+                ],
+                "length_m": 40,
+                "width_m": 9,
+                "strength": 1.0
+            }
+        ],
+        "destroyed_when": "any_section"
+    },
+    "alternate_targets": [],
+    "time_over_target": {
+        "at_s": 5830,
+        "window_s": 90
+    },
+    "formation": {
+        "wingmen": 2,
+        "spacing_m": 70
+    },
+    "loadout": {
+        "bombs": [
+            {
+                "type": "AN-M64",
+                "count": 6
+            }
+        ],
+        "fuel_kg": 2350,
+        "planned_burn_kg": 1641
+    },
+    "threats": {
+        "flak": [
+            {
+                "id": "bridge-heavy-n",
+                "lat": 43.955,
+                "lon": 4.81,
+                "type": "heavy",
+                "elevation_m": 25,
+                "guns": 4,
+                "active": true,
+                "barrage": false
+            },
+            {
+                "id": "bridge-heavy-s",
+                "lat": 43.912,
+                "lon": 4.79,
+                "type": "heavy",
+                "elevation_m": 20,
+                "guns": 4,
+                "active": true,
+                "barrage": true
+            },
+            {
+                "id": "bridge-light",
+                "lat": 43.94,
+                "lon": 4.775,
+                "type": "light",
+                "elevation_m": 20,
+                "guns": 3,
+                "active": true,
+                "barrage": false
+            },
+            {
+                "id": "coast-heavy",
+                "lat": 43.32,
+                "lon": 5.05,
+                "type": "heavy",
+                "elevation_m": 30,
+                "guns": 2,
+                "active": true,
+                "barrage": false
+            }
+        ],
+        "fighter_waves": [
+            {
+                "id": "fw190-pair",
+                "type": "fw190a",
+                "count": 2,
+                "skill": "experienced",
+                "spawn": {
+                    "bearing_deg": 320,
+                    "distance_m": 9000,
+                    "altitude_offset_m": 800
+                },
+                "attacks": [
+                    "head_on",
+                    "high_six"
+                ]
+            },
+            {
+                "id": "bf109-pair",
+                "type": "bf109g",
+                "count": 2,
+                "skill": "novice",
+                "spawn": {
+                    "bearing_deg": 160,
+                    "distance_m": 7000,
+                    "altitude_offset_m": 500
+                },
+                "attacks": [
+                    "high_six",
+                    "beam"
+                ]
+            }
+        ]
+    },
+    "radio": {
+        "frequencies_mhz": {
+            "tower": 4.12,
+            "command": 5.65,
+            "base": 6.84
+        },
+        "code_table": [
+            {
+                "group": "VX-17",
+                "meaning": "target_confirmed"
+            },
+            {
+                "group": "VX-42",
+                "meaning": "recall"
+            },
+            {
+                "group": "QR-05",
+                "meaning": "weather_clear"
+            },
+            {
+                "group": "QR-31",
+                "meaning": "weather_bad"
+            },
+            {
+                "group": "KF-88",
+                "meaning": "fighters_reported"
+            },
+            {
+                "group": "TL-62",
+                "meaning": "change_target"
+            },
+            {
+                "group": "TL-21",
+                "meaning": "iff_reminder"
+            },
+            {
+                "group": "AL-36",
+                "meaning": "landing_clearance"
+            }
+        ],
+        "beacon": {
+            "lat": 42.2,
+            "lon": 9.5
+        }
+    },
+    "radio_script": [
+        {
+            "id": "weather",
+            "channel": "command",
+            "group": "QR-05",
+            "meaning": "weather_clear",
+            "duration_s": 12,
+            "repeats": 2
+        },
+        {
+            "id": "confirm",
+            "channel": "base",
+            "group": "VX-17",
+            "meaning": "target_confirmed",
+            "duration_s": 12,
+            "repeats": 3
+        },
+        {
+            "id": "iff",
+            "channel": "base",
+            "group": "TL-21",
+            "meaning": "iff_reminder",
+            "duration_s": 10,
+            "repeats": 2
+        },
+        {
+            "id": "clearance",
+            "channel": "tower",
+            "group": "AL-36",
+            "meaning": "landing_clearance",
+            "duration_s": 10,
+            "repeats": 2
+        }
+    ],
+    "triggers": [
+        {
+            "id": "t-weather",
+            "once": true,
+            "when": {
+                "phase": "route",
+                "time_s": 420
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "weather"
+                }
+            ]
+        },
+        {
+            "id": "t-confirm",
+            "once": true,
+            "when": {
+                "near_waypoint": {
+                    "id": "wp1",
+                    "radius_m": 6000
+                }
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "confirm"
+                }
+            ]
+        },
+        {
+            "id": "t-clearance",
+            "once": true,
+            "when": {
+                "phase": "landing"
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "clearance"
+                }
+            ]
+        },
+        {
+            "id": "t-landfall-fighters",
+            "once": true,
+            "when": {
+                "near_waypoint": {
+                    "id": "landfall",
+                    "radius_m": 15000
+                },
+                "probability": 0.5
+            },
+            "then": [
+                {
+                    "type": "spawn_wave",
+                    "wave": "fw190-pair"
+                }
+            ]
+        },
+        {
+            "id": "t-egress-fighters",
+            "once": true,
+            "when": {
+                "phase": "egress",
+                "probability": 0.4
+            },
+            "then": [
+                {
+                    "type": "spawn_wave",
+                    "wave": "bf109-pair"
+                }
+            ]
+        },
+        {
+            "id": "t-iff",
+            "once": true,
+            "when": {
+                "phase": "return",
+                "near_waypoint": {
+                    "id": "wp5",
+                    "radius_m": 25000
+                }
+            },
+            "then": [
+                {
+                    "type": "send_radio",
+                    "message": "iff"
+                }
+            ]
+        }
+    ],
+    "landmarks": [
+        {
+            "id": "cap-corse",
+            "lat": 43.01,
+            "lon": 9.42,
+            "kind": "cape",
+            "name": {
+                "ru": "Мыс Корс",
+                "en": "Cap Corse"
+            }
+        },
+        {
+            "id": "maures-coast",
+            "lat": 43.27,
+            "lon": 6.65,
+            "kind": "coast",
+            "name": {
+                "ru": "Берег у Мор",
+                "en": "Coast at the Maures"
+            }
+        },
+        {
+            "id": "rhone-mouth",
+            "lat": 43.35,
+            "lon": 4.85,
+            "kind": "coast",
+            "name": {
+                "ru": "Устье Роны",
+                "en": "Mouth of the Rhône"
+            }
+        },
+        {
+            "id": "corsica-coast-south",
+            "lat": 42.064344,
+            "lon": 9.560631,
+            "kind": "coast",
+            "name": {
+                "ru": "Берег у Алезани",
+                "en": "Coast near Alesan"
+            }
+        }
+    ],
+    "objectives": [
+        {
+            "id": "o-target",
+            "type": "destroy_target"
+        },
+        {
+            "id": "o-return",
+            "type": "return_aircraft"
+        },
+        {
+            "id": "o-crew",
+            "type": "crew_survival"
+        },
+        {
+            "id": "o-time",
+            "type": "time_over_target"
+        }
+    ],
+    "scoring": {
+        "target": 0.45,
+        "aircraft": 0.25,
+        "crew": 0.2,
+        "timing": 0.1
+    },
+    "briefing": {
+        "general": {
+            "ru": "Вылет «по мотивам» ударов 340-й группы по мостам Роны перед высадкой в Провансе. Сбор над восточным берегом Корсики, обход мыса Корс, выход на побережье у Мор, IP восточнее Авиньона, удар серией 6 × AN-M64 по железнодорожному мосту, отход на юг к устью Роны. У моста — тяжёлая ЗА с заградительным огнём; на подходе возможны Fw 190.",
+            "en": "A sortie loosely based on the 340th Group's strikes on the Rhône bridges before the Provence landings. Form up over the east coast of Corsica, round Cap Corse, make landfall near the Maures, IP east of Avignon, drop a train of 6 × AN-M64 on the railway bridge, then break south to the mouth of the Rhône. Heavy flak with barrage fire at the bridge; Fw 190s may intercept on the way in."
+        },
+        "roles": {
+            "pilot": {
+                "ru": "Курс и высоту держите по докладам штурмана. До IP — манёвр при обстреле, после IP — строго по PDI.",
+                "en": "Fly the navigator's headings. Weave under flak before the IP, then follow the PDI strictly."
+            },
+            "copilot": {
+                "ru": "Чек-листы, запуск двигателей, шасси и закрылки по команде. Следите за температурой головок.",
+                "en": "Checklists, engine start, gear and flaps on command. Watch cylinder-head temperatures."
+            },
+            "bombardier": {
+                "ru": "Точка прицеливания — середина моста (6 пролётов). Серия 6 × AN-M64, интервал 100 мс, высота над целью около 3580 м. Боевой путь с запада — 53 км прямо.",
+                "en": "Aiming point: the middle of the bridge (6 spans). Train of 6 × AN-M64, 100 ms interval, about 3,580 m above the target. The bomb run from the IP is 53 km straight west."
+            },
+            "navigator": {
+                "ru": "Маршрут: сбор → wp1 → wp2 (за мысом Корс) → wp3 → берег у Мор → IP → цель → сбор после удара → выход к устью Роны → wp4 → мыс Корс с севера → wp5 → заход. Время над целью — в брифинге навигатора.",
+                "en": "Route: form-up → wp1 → wp2 (past Cap Corse) → wp3 → landfall at the Maures → IP → target → rally → coast-out at the Rhône mouth → wp4 → north of Cap Corse → wp5 → approach. Time over target is in your navigator brief."
+            },
+            "top_gunner": {
+                "ru": "Верхняя полусфера. Вы же бортинженер: пожары, перекачка топлива, аварийный выпуск шасси.",
+                "en": "Upper hemisphere. You are also the flight engineer: fires, fuel transfer, emergency gear."
+            },
+            "radio": {
+                "ru": "Командная частота 5,65 МГц, база 6,84 МГц, вышка 4,12 МГц. Кодовая таблица дня — во вкладке.",
+                "en": "Command 5.65 MHz, base 6.84 MHz, tower 4.12 MHz. Today's code table is in the tab."
+            },
+            "waist_gunner": {
+                "ru": "Правый борт. Первая помощь раненым; следите за двигателями снаружи.",
+                "en": "Right side. First aid for the wounded; watch the engines from outside."
+            },
+            "tail_gunner": {
+                "ru": "Задняя полусфера. После сброса доложите результат по разрывам.",
+                "en": "Rear hemisphere. Report the bomb results after the drop."
+            }
+        }
+    },
+    "sources": [
+        {
+            "title": "Wikipedia — 340th Bombardment Group",
+            "url": "https://en.wikipedia.org/wiki/340th_Bombardment_Group"
+        },
+        {
+            "title": "American Air Museum — B-25J 43-4064",
+            "url": "https://americanairmuseum.com/aircraft/23469"
+        }
+    ]
+}

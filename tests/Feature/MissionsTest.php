@@ -104,8 +104,10 @@ it('lists published missions in the catalog', function (): void {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('missions/Index')
-            ->has('missions', 1)
+            ->has('missions', 3)
             ->where('missions.0.slug', 'milk-run')
+            ->where('missions.1.slug', 'avignon')
+            ->where('missions.2.slug', 'brenner')
             ->where('missions.0.placeholder', true));
 });
 

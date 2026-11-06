@@ -9,6 +9,8 @@ export default defineConfig({
     timeout: 60_000,
     expect: { timeout: 15_000 },
     fullyParallel: false,
+    // Вылеты тяжёлые (WebGL, 3 браузера в кооперативе): по одному, иначе машина перегружена и замеры врут.
+    workers: 1,
     retries: process.env.CI ? 1 : 0,
     reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
     use: {

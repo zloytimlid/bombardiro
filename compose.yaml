@@ -4,6 +4,8 @@ x-php: &php
     build:
         context: .
         dockerfile: docker/php/Dockerfile
+        # Разработка — базовый образ с bind-mount кода; продакшен — compose.prod.yaml (стадии prod и web).
+        target: base
     image: b25j-php:dev
     volumes:
         - .:/var/www/html

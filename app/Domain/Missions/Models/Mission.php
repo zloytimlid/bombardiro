@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_published
  * @property bool $placeholder
  * @property list<array<string, string>> $sources
+ * @property int|null $generated_by
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Theatre $theatre
@@ -77,9 +78,27 @@ class Mission extends Model
             ->whereRaw('version = (select max(m2.version) from missions m2 where m2.slug = missions.slug and m2.is_published = true)');
     }
 
+    /**
+     * Порядок каталога: от учебных к сложным, внутри — по slug.
+     *
+     * @param  Builder<Mission>  $query
+     * @return Builder<Mission>
+     */
+    public function scopeCatalogOrder(Builder $query): Builder
+    {
+        return $query->orderByRaw("case difficulty when 'training' then 0 when 'normal' then 1 else 2 end")->orderBy('slug');
+    }
+
     public static function latestPublished(string $slug): ?self
     {
         return self::query()->where('slug', $slug)->where('is_published', true)->orderByDesc('version')->first();
+    }
+
+    /** Опубликованная миссия или сгенерированная этим игроком (этап 6). */
+    public static function availableTo(string $slug, int $userId): ?self
+    {
+        return self::latestPublished($slug)
+            ?? self::query()->where('slug', $slug)->where('generated_by', $userId)->orderByDesc('version')->first();
     }
 
     public function localizedTitle(string $locale): string

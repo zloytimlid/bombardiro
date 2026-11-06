@@ -90,6 +90,11 @@ export class FlightLogic {
             world.event('abort', { reason: 'engine' });
             world.say(this.station, 'intercom.returning');
             world.setPhase('return');
+
+            // На одном двигателе с полной подвеской высоту не удержать — аварийный сброс (рукоятка есть и у пилота).
+            if (world.rack.length > 0) {
+                world.act(this.station, { type: 'salvo' });
+            }
         }
     }
 
@@ -124,7 +129,8 @@ export class FlightLogic {
                     world.act(this.station, { type: 'order', order: 'report_ready' });
                 }
 
-                if (this.readyTimerS < 8) {
+                // В звене ведомые экипажи взлетают по очереди (takeoffDelayS по месту в строю).
+                if (this.readyTimerS < 8 + world.takeoffDelayS) {
                     this.fly(world, { throttle: 0, brakes: 1, gearDown: true, flaps: 0.25 }, dt);
 
                     return;
@@ -162,7 +168,8 @@ export class FlightLogic {
         const nav = world.nav;
         const next = world.waypointPosition(nav.legIndex);
         const heading = nav.courseToSteer ?? (next !== null ? bearing(world.aircraft.position, next) : d.heading);
-        const altitude = next?.z ?? d.altitude;
+        // Не ниже рельефа на 12 км вперёд с запасом 500 м (большие театры: Альпы, Апеннины).
+        const altitude = Math.max(next?.z ?? d.altitude, this.terrainFloor(world, heading));
         const climbing = altitude - d.altitude > 120;
         let ias = world.phase === 'route' && nav.requiredIasMs !== null ? nav.requiredIasMs : CRUISE_IAS;
         let headingCmd = heading;
@@ -189,6 +196,21 @@ export class FlightLogic {
         }
 
         this.fly(world, { heading: headingCmd, altitude, maxVerticalSpeed: 6, airspeed: ias, gearDown: false, flaps: 0 }, dt);
+    }
+
+    private terrainFloor(world: MissionWorld, heading: number): number {
+        const p = world.aircraft.position;
+        let highest = 0;
+
+        for (let km = 0; km <= 12; km += 1.5) {
+            for (const off of [-0.25, 0, 0.25]) {
+                const h = heading + off;
+
+                highest = Math.max(highest, world.terrain.heightAt(p.x + Math.sin(h) * km * 1000, p.y + Math.cos(h) * km * 1000));
+            }
+        }
+
+        return highest + 500;
     }
 
     private updateBombRun(world: MissionWorld, dt: number): void {

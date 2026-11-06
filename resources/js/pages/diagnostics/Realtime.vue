@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { useI18n } from '@/composables/useI18n';
 import { radioCheck } from '@/routes/diagnostics';
 
+const { t } = useI18n();
+
 type Member = { id: number; callsign: string };
 type RadioMessage = { callsign: string; message: string };
 type LogEntry = { kind: 'broadcast' | 'whisper'; text: string };
 
-const { t } = useI18n();
 const page = usePage();
 
 const members = ref<Member[]>([]);

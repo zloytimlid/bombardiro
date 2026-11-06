@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import corsicaJson from '../../../sim/theatres/corsica.json';
 import { clamp } from './math';
+import { geographySchema } from './geographySchema';
 import { valueNoise2 } from './rng';
 
 /**
@@ -37,6 +38,10 @@ export const theatreSchema = z.object({
     mountains_peak_m: z.number(),
     /** Берег материка на востоке (Италия), м; null — только остров. */
     mainland_coast_x_m: z.number().nullable().default(null),
+    /** Границы театра в ENU, м (нужны сетке рельефа больших театров). */
+    bounds: z.object({ min_x: z.number(), max_x: z.number(), min_y: z.number(), max_y: z.number() }).optional(),
+    /** Большой театр: береговая линия и хребты (GeoTerrain); без него — процедурный остров (ProceduralTerrain). */
+    geography: geographySchema.optional(),
     runways: z
         .array(
             z.object({

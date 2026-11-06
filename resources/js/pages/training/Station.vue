@@ -5,6 +5,8 @@ import GameScreen from '@/components/game/GameScreen.vue';
 import { useI18n } from '@/composables/useI18n';
 import type { Station } from '@/sim/core';
 
+const { t } = useI18n();
+
 /** Тренировка станции (раздел 11: GET /training/{station}): сценарий с оценкой. */
 const props = defineProps<{
     station: Station;
@@ -15,7 +17,6 @@ const props = defineProps<{
     theatre: { name: string; placeholder: boolean; definition: Record<string, unknown> };
 }>();
 
-const { t } = useI18n();
 const key = ref(0);
 void props;
 </script>

@@ -82,6 +82,102 @@ PostgreSQL 17. Публичные идентификаторы (экипажи, 
 
 Миссии загружает `ImportMission` (из `sim:sync`): JSON Schema → `MissionMetaData` (laravel-data) → версия.
 
+## crews
+
+| Поле | Тип | Ограничения |
+|------|-----|-------------|
+| ulid | char(26) | unique, ключ маршрута |
+| name | varchar(64) | |
+| owner_id | bigint | FK → users, cascade, индекс |
+| invite_code | char(8) | unique |
+| visibility | varchar(16) | check: public / private |
+| max_players | smallint | check 1–8 |
+| status | varchar(16) | check: lobby / in_session / closed |
+| mission_id | bigint | FK → missions, restrict, индекс |
+| difficulty | varchar(16) | check: training / historical |
+| host_user_id | bigint null | FK → users, set null; выбранный владельцем хост |
+
+## crew_members
+
+| Поле | Тип | Ограничения |
+|------|-----|-------------|
+| crew_id, user_id | bigint | FK, cascade; unique(crew_id, user_id) |
+| seat | varchar(16) null | check: одна из 8 станций; частичный unique(crew_id, seat) WHERE seat IS NOT NULL |
+| is_ready | bool | |
+| rtt_ms | int null | последний замер |
+| last_seen_at | timestamp null | пульс; место держится 120 с |
+| joined_at | timestamp | |
+
+## flight_sessions
+
+| Поле | Тип | Ограничения |
+|------|-----|-------------|
+| ulid | char(26) | unique |
+| crew_id | bigint | FK → crews, cascade |
+| mission_id, mission_version | bigint, int | миссия и её версия на момент старта |
+| seed | bigint | сид симядра |
+| difficulty | varchar(16) | check |
+| status | varchar(16) | check, индекс: briefing / active / finished / aborted |
+| host_user_id | bigint null | текущий хост |
+| started_at, ended_at | timestamp null | |
+| outcome, score, verified, flags | | итог серверного разбора |
+| debrief | jsonb null | итог хоста (`summary`) и серверный разбор |
+| last_seq | int | последний номер журнала |
+
+## flight_session_participants
+
+Кто и когда сидел на месте: `flight_session_id`, `user_id` (null — ИИ), `seat`, `is_ai`, `joined_at`, `left_at`, `metrics` (jsonb, метрики станции из разбора). Check: `is_ai OR user_id IS NOT NULL`.
+
+## flight_session_events
+
+Журнал вылета: `flight_session_id`, `seq`, `tick`, `type`, `payload` (jsonb), `created_at` (индекс); unique(flight_session_id, seq) — повторная отправка пачки безопасна.
+
+## achievements
+
+| Поле | Тип | Ограничения |
+|------|-----|-------------|
+| slug | varchar(64) | unique |
+| title, description | jsonb | `{ru, en}` |
+| criteria | jsonb | декларативное условие (`AchievementRules`): `all` / `any` / `{metric, op, value}` |
+| icon | varchar(32) | |
+| sort | smallint | порядок в ангаре |
+
+Каталог загружает `SyncSimContent` из `resources/sim/achievements.json` (с проверкой условий).
+
+## user_achievements
+
+`user_id` (FK, cascade), `achievement_id` (FK, cascade), `flight_session_id` (FK null, set null), `unlocked_at`; unique(user_id, achievement_id).
+
+`flight_sessions.awarded_at` — вылет учтён в статистике и достижениях; индекс (status, verified, mission_id, score) — рейтинги.
+
+## social_accounts
+
+`user_id` (FK, cascade), `provider` (check: discord / google), `provider_id`; unique(provider, provider_id), unique(user_id, provider). Токены провайдера не хранятся.
+
+Модерация и персональные данные (миграция `account_deletion_and_moderation`): `users.banned_at`, `users.ban_reason`;
+`flight_sessions.reviewed_at`, `reviewed_by` (FK → users, set null), `review_decision` (check: accepted / rejected);
+`flight_session_participants.anonymized_at` (check участника: `is_ai OR user_id IS NOT NULL OR anonymized_at IS NOT NULL`);
+`crews.owner_id` — nullable, set null при удалении владельца.
+
+## flight_session_replays (этап 6)
+
+`flight_session_id` (FK, cascade, unique), `storage_path` (S3), `bytes`, `format_version`, `pinned`; индекс (pinned, created_at) — очистка через 30 дней.
+
+## campaigns, campaign_progress (этап 6)
+
+`campaigns`: `slug` (unique), `title`, `description` (jsonb `{ru, en}`), `missions` (jsonb, slug по порядку), `rules` (jsonb), `placeholder`.
+`campaign_progress`: `campaign_id`, `crew_id` (FK, cascade; unique вместе), `step`, `day`, `airframe_state` (jsonb, повреждения зон), `crew_state`, `history` (jsonb), `completed_at`.
+`crews.campaign_progress_id` и `flight_sessions.campaign_progress_id` — FK null, set null.
+
+## flights (этап 6)
+
+`ulid` (unique), `invite_code` (unique), `leader_crew_id` (FK → crews, cascade), `mission_id` (FK, restrict), `status` (check: lobby / in_session / closed), `seed`.
+`crews.flight_id` (FK null, set null), `crews.flight_slot` (check 0–3; unique(flight_id, flight_slot)); то же — в `flight_sessions`.
+
+`missions.generated_by` (FK → users null, set null) — черновик генератора: не публикуется, виден автору и его экипажам.
+
+Таблицы Pulse (`pulse_values`, `pulse_entries`, `pulse_aggregates`) — служебные, создаются миграцией пакета.
+
 ## Служебные таблицы
 
 `password_reset_tokens`, `sessions` (не используется: сессии в Redis), `cache`, `cache_locks`, `jobs`,

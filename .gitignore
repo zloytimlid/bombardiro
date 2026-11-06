@@ -51,3 +51,7 @@ yarn-error.log
 /test-results
 /coverage
 /.env.before
+
+# Треки меню — локальные файлы игрока (права на музыку), в репозиторий не попадают.
+/resources/audio/menu/*
+!/resources/audio/menu/README.md

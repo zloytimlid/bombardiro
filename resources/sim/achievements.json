@@ -1,0 +1,83 @@
+{
+    "version": 1,
+    "note": "Каталог достижений (раздел 10). Условия — декларативные (App\\Domain\\Progression\\Support\\AchievementRules). Игровые, не исторические награды.",
+    "achievements": [
+        {
+            "slug": "first_sortie",
+            "icon": "plane",
+            "title": { "ru": "Первый вылет", "en": "First sortie" },
+            "description": { "ru": "Вернуться на аэродром после боевого вылета.", "en": "Return to the airfield after a combat sortie." },
+            "criteria": { "metric": "outcome", "op": "in", "value": ["landed", "landed_off_field", "belly_landed"] }
+        },
+        {
+            "slug": "bridge_buster",
+            "icon": "target",
+            "title": { "ru": "Разрушитель мостов", "en": "Bridge buster" },
+            "description": { "ru": "Цель уничтожена.", "en": "Target destroyed." },
+            "criteria": { "metric": "target.status", "op": "eq", "value": "destroyed" }
+        },
+        {
+            "slug": "on_time",
+            "icon": "clock",
+            "title": { "ru": "Минута в минуту", "en": "Right on time" },
+            "description": { "ru": "Цель уничтожена в окне времени над целью.", "en": "Target destroyed within the time-over-target window." },
+            "criteria": { "all": [{ "metric": "target.status", "op": "eq", "value": "destroyed" }, { "metric": "tot.within", "op": "eq", "value": true }] }
+        },
+        {
+            "slug": "milk_run",
+            "icon": "map",
+            "title": { "ru": "Милк-ран", "en": "Milk run" },
+            "description": { "ru": "Пройти «Милк-ран» с посадкой на аэродроме.", "en": "Complete the Milk Run and land at the airfield." },
+            "criteria": { "all": [{ "metric": "mission", "op": "eq", "value": "milk-run" }, { "metric": "outcome", "op": "eq", "value": "landed" }] }
+        },
+        {
+            "slug": "avignon",
+            "icon": "map",
+            "title": { "ru": "Над Роной", "en": "Over the Rhône" },
+            "description": { "ru": "Пройти «Авиньон» с посадкой на аэродроме.", "en": "Complete Avignon and land at the airfield." },
+            "criteria": { "all": [{ "metric": "mission", "op": "eq", "value": "avignon" }, { "metric": "outcome", "op": "eq", "value": "landed" }] }
+        },
+        {
+            "slug": "brenner",
+            "icon": "mountain",
+            "title": { "ru": "Перевал", "en": "The Pass" },
+            "description": { "ru": "Пройти «Бреннер» с посадкой на аэродроме.", "en": "Complete Brenner and land at the airfield." },
+            "criteria": { "all": [{ "metric": "mission", "op": "eq", "value": "brenner" }, { "metric": "outcome", "op": "eq", "value": "landed" }] }
+        },
+        {
+            "slug": "full_crew",
+            "icon": "users",
+            "title": { "ru": "Полный экипаж", "en": "Full crew" },
+            "description": { "ru": "Вылет, в котором все 8 мест заняты игроками.", "en": "A sortie with all 8 seats taken by players." },
+            "criteria": { "all": [{ "metric": "humans", "op": "gte", "value": 8 }, { "metric": "outcome", "op": "eq", "value": "landed" }] }
+        },
+        {
+            "slug": "everyone_home",
+            "icon": "shield",
+            "title": { "ru": "Все дома", "en": "Everyone home" },
+            "description": { "ru": "«Исторический» режим: посадка без единого раненого.", "en": "Historical mode: land with no one wounded." },
+            "criteria": { "all": [{ "metric": "difficulty", "op": "eq", "value": "historical" }, { "metric": "outcome", "op": "eq", "value": "landed" }, { "metric": "wounded", "op": "eq", "value": 0 }] }
+        },
+        {
+            "slug": "belly_landing",
+            "icon": "wrench",
+            "title": { "ru": "На брюхе", "en": "On her belly" },
+            "description": { "ru": "Довести подбитый самолёт и посадить на фюзеляж.", "en": "Bring a damaged aircraft home with a belly landing." },
+            "criteria": { "metric": "outcome", "op": "eq", "value": "belly_landed" }
+        },
+        {
+            "slug": "gunner_double",
+            "icon": "crosshair",
+            "title": { "ru": "Дуплет", "en": "Double" },
+            "description": { "ru": "Стрелок сбил два истребителя за вылет.", "en": "A gunner shot down two fighters in one sortie." },
+            "criteria": { "metric": "station.kills", "op": "gte", "value": 2 }
+        },
+        {
+            "slug": "veteran",
+            "icon": "medal",
+            "title": { "ru": "Ветеран", "en": "Veteran" },
+            "description": { "ru": "10 вылетов.", "en": "10 sorties." },
+            "criteria": { "metric": "profile.missions_total", "op": "gte", "value": 10 }
+        }
+    ]
+}

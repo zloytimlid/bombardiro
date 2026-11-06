@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { SkipForward, Volume2, VolumeX } from '@lucide/vue';
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import { useI18n } from '@/composables/useI18n';
 import type { MenuMusic, Track } from '@/game/menu/music';
@@ -7,11 +8,12 @@ import { dashboard, login, register } from '@/routes';
 import { index as missions, solo } from '@/routes/missions';
 import { show as training } from '@/routes/training';
 
+const { t } = useI18n();
+
 /**
  * Главное меню (раздел 12): за меню — вид от левой стороны начала полосы Алезани,
  * где взлетают и садятся самолёты. Музыка — только здесь; треки — файлы в resources/audio/menu/.
  */
-const { t } = useI18n();
 
 const stations = ['pilot', 'copilot', 'bombardier', 'navigator', 'top_gunner', 'radio', 'waist_gunner', 'tail_gunner'] as const;
 
@@ -102,13 +104,17 @@ onBeforeUnmount(() => {
             </nav>
 
             <p class="max-w-md text-xs text-stone-300">{{ t('home.stage_notice') }}</p>
+            <Link href="/about" class="text-xs text-stone-400 underline" data-test="menu-about">{{ t('about.title') }}</Link>
         </main>
 
         <!-- Музыка: только если в resources/audio/menu/ есть треки. -->
         <div v-if="music && music.tracks.length > 0" class="absolute right-4 bottom-4 flex items-center gap-2 rounded-md bg-black/55 px-3 py-2 text-xs" data-test="menu-music">
-            <button type="button" class="rounded bg-stone-700 px-2 py-0.5" :aria-pressed="!muted" @click="music.toggleMute()">{{ muted ? '🔇' : '🔊' }}</button>
+            <button type="button" class="rounded bg-stone-700 px-2 py-0.5" :aria-pressed="!muted" :aria-label="t('menu.mute')" :title="t('menu.mute')" @click="music.toggleMute()">
+                <VolumeX v-if="muted" class="size-4" aria-hidden="true" />
+                <Volume2 v-else class="size-4" aria-hidden="true" />
+            </button>
             <input type="range" min="0" max="1" step="0.05" class="w-24" :value="volume" :aria-label="t('menu.volume')" @input="music.setVolume(Number(($event.target as HTMLInputElement).value))" />
-            <button type="button" class="rounded bg-stone-700 px-2 py-0.5" :title="t('menu.next_track')" @click="music.next()">⏭</button>
+            <button type="button" class="rounded bg-stone-700 px-2 py-0.5" :title="t('menu.next_track')" :aria-label="t('menu.next_track')" @click="music.next()"><SkipForward class="size-4" aria-hidden="true" /></button>
             <span class="max-w-48 truncate text-stone-300">{{ track ? track.title : t('menu.music_click') }}</span>
         </div>
     </div>

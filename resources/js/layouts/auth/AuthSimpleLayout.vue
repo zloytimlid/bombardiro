@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n';
 import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import { home } from '@/routes';
@@ -7,6 +8,9 @@ defineProps<{
     title?: string;
     description?: string;
 }>();
+
+// title/description — ключи переводов из defineOptions страниц.
+const { t } = useI18n();
 </script>
 
 <template>
@@ -27,12 +31,12 @@ defineProps<{
                                 class="size-9 fill-current text-[var(--foreground)] dark:text-white"
                             />
                         </div>
-                        <span class="sr-only">{{ title }}</span>
+                        <span class="sr-only">{{ t(title ?? '') }}</span>
                     </Link>
                     <div class="space-y-2 text-center">
-                        <h1 class="text-xl font-medium">{{ title }}</h1>
+                        <h1 class="text-xl font-medium">{{ t(title ?? '') }}</h1>
                         <p class="text-center text-sm text-muted-foreground">
-                            {{ description }}
+                            {{ t(description ?? '') }}
                         </p>
                     </div>
                 </div>

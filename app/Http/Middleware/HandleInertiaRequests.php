@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Accounts\Actions\AccountService;
+use App\Domain\Accounts\Actions\SocialLogin;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,6 +46,12 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Настройки игрока (управление, графика, звук, доступность) — одна схема UserSettingsData.
+            'settings' => fn () => ($user = $request->user()) instanceof User ? app(AccountService::class)->settings($user) : null,
+            // Кнопки входа через Discord/Google — только для настроенных провайдеров.
+            'socialProviders' => fn () => SocialLogin::available(),
+            // Голосовое СПУ: STUN/TURN-серверы (config/services.php).
+            'voice' => fn () => ['ice' => config('services.voice.ice', [])],
         ];
     }
 }

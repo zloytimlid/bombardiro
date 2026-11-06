@@ -92,6 +92,8 @@ jobs:
       - run: cp .env.example .env && php artisan key:generate
       - name: Build assets
         run: npm run build
+      - name: Bundle budget (section 13)
+        run: npm run budget:bundle
       - name: Pest
         run: php artisan test --parallel
       - name: Vitest

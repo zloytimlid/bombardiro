@@ -1,0 +1,16 @@
+{
+    "slug": "mto-1944",
+    "title": { "ru": "Корсика, 1944", "en": "Corsica, 1944" },
+    "description": {
+        "ru": "Три вылета подряд на одном борту: учебный «Милк-ран», мосты Роны у Авиньона и линия Бреннера. Пробоины и неисправности остаются до ремонта; день ремонта восстанавливает часть прочности.",
+        "en": "Three sorties in a row on one airframe: the Milk Run training sortie, the Rhône bridges at Avignon and the Brenner line. Battle damage stays until repaired; each repair day restores part of the structure."
+    },
+    "placeholder": true,
+    "todo": "TODO(history): кампания «по мотивам», порядок и даты вылетов — игровые",
+    "missions": ["milk-run", "avignon", "brenner"],
+    "rules": {
+        "repair_per_day": { "value": 0.35, "source": "gameplay", "note": "доля полной прочности зоны, восстанавливаемая за день ремонта" },
+        "advance_on": ["landed", "landed_off_field", "belly_landed"],
+        "retry_on_failure": true
+    }
+}

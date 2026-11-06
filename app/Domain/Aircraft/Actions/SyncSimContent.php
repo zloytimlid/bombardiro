@@ -6,8 +6,12 @@ namespace App\Domain\Aircraft\Actions;
 
 use App\Domain\Aircraft\Models\AircraftType;
 use App\Domain\Aircraft\Models\Airframe;
+use App\Domain\Campaigns\Models\Campaign;
 use App\Domain\Missions\Actions\ImportMission;
+use App\Domain\Missions\Models\Mission;
 use App\Domain\Missions\Models\Theatre;
+use App\Domain\Progression\Models\Achievement;
+use App\Domain\Progression\Support\AchievementRules;
 use Illuminate\Support\Facades\DB;
 use JsonException;
 use RuntimeException;
@@ -27,19 +31,22 @@ final readonly class SyncSimContent
     public function handle(): void
     {
         DB::transaction(function (): void {
-            $theatre = $this->readJson('sim/theatres/corsica.json');
-            $definition = $theatre;
-            unset($definition['name'], $definition['bounds'], $definition['terrain_manifest_url'], $definition['todo']);
+            foreach (glob(resource_path('sim/theatres/*.json')) ?: [] as $file) {
+                $theatre = $this->readJson('sim/theatres/'.basename($file));
+                $definition = $theatre;
+                // Границы нужны и рельефу больших театров (сетка расстояний до берега).
+                unset($definition['name'], $definition['terrain_manifest_url'], $definition['todo']);
 
-            Theatre::query()->updateOrCreate(['slug' => $theatre['slug']], [
-                'name' => $theatre['name'],
-                'origin_lat' => $theatre['origin_lat'],
-                'origin_lon' => $theatre['origin_lon'],
-                'bounds' => $theatre['bounds'],
-                'terrain_manifest_url' => $theatre['terrain_manifest_url'],
-                'definition' => $definition,
-                'placeholder' => (bool) $theatre['placeholder'],
-            ]);
+                Theatre::query()->updateOrCreate(['slug' => $theatre['slug']], [
+                    'name' => $theatre['name'],
+                    'origin_lat' => $theatre['origin_lat'],
+                    'origin_lon' => $theatre['origin_lon'],
+                    'bounds' => $theatre['bounds'],
+                    'terrain_manifest_url' => $theatre['terrain_manifest_url'],
+                    'definition' => $definition,
+                    'placeholder' => (bool) $theatre['placeholder'],
+                ]);
+            }
 
             $config = $this->readJson('sim/aircraft/b25j.json');
             /** @var array{serial: string, name: string} $airframe */
@@ -59,6 +66,39 @@ final readonly class SyncSimContent
 
             foreach (glob(resource_path('sim/missions/*.json')) ?: [] as $file) {
                 $this->importMission->handle($this->readJson('sim/missions/'.basename($file)));
+            }
+
+            /** @var list<array{slug: string, icon: string, title: array<string, string>, description: array<string, string>, criteria: array<string, mixed>}> $achievements */
+            $achievements = $this->readJson('sim/achievements.json')['achievements'];
+
+            foreach ($achievements as $i => $a) {
+                AchievementRules::validate($a['criteria']);
+                Achievement::query()->updateOrCreate(['slug' => $a['slug']], [
+                    'title' => $a['title'],
+                    'description' => $a['description'],
+                    'criteria' => $a['criteria'],
+                    'icon' => $a['icon'],
+                    'sort' => $i,
+                ]);
+            }
+
+            // Кампании (этап 6): миссии должны существовать.
+            foreach (glob(resource_path('sim/campaigns/*.json')) ?: [] as $file) {
+                $c = $this->readJson('sim/campaigns/'.basename($file));
+
+                foreach ($c['missions'] as $slug) {
+                    if (Mission::latestPublished($slug) === null) {
+                        throw new RuntimeException("Campaign {$c['slug']}: unknown mission {$slug}");
+                    }
+                }
+
+                Campaign::query()->updateOrCreate(['slug' => $c['slug']], [
+                    'title' => $c['title'],
+                    'description' => $c['description'],
+                    'missions' => $c['missions'],
+                    'rules' => $c['rules'],
+                    'placeholder' => (bool) ($c['placeholder'] ?? true),
+                ]);
             }
         });
     }

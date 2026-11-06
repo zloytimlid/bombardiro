@@ -13,9 +13,9 @@ abstract class Controller
      *
      * @throws AuthenticationException
      */
-    protected function authUser(Request $request): User
+    protected function authUser(?Request $request = null): User
     {
-        $user = $request->user();
+        $user = ($request ?? request())->user();
 
         if (! $user instanceof User) {
             throw new AuthenticationException;

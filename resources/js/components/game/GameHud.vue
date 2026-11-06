@@ -11,7 +11,7 @@ import { STATIONS } from '@/sim/core';
  * лента СПУ (5 сообщений), круговой индикатор угроз по часовой системе, индикатор связи.
  * Маркеры угроз различимы без цвета: форма + подпись (доступность).
  */
-const props = defineProps<{ frame: GameFrame; mode: 'mission' | 'training' }>();
+const props = withDefaults(defineProps<{ frame: GameFrame; mode: 'mission' | 'training'; subtitles?: boolean }>(), { subtitles: true });
 const emit = defineEmits<{ switch: [station: Station] }>();
 const { t } = useI18n();
 
@@ -27,7 +27,7 @@ const statusMark = (m: (typeof view.value.crew)[number] | undefined): string => 
         return '⇣';
     }
 
-    return m.health === 'ok' ? '●' : m.health === 'wounded' ? '▲' : '✕';
+    return m.health === 'ok' ? '●' : m.health === 'wounded' ? '▲' : '×';
 };
 
 const threats = computed(() =>
@@ -67,13 +67,14 @@ const threats = computed(() =>
         <div class="text-xs text-stone-300">{{ t(`task_hint.${view.station}`) }}</div>
         <div class="mt-1 font-mono text-[11px] text-stone-400">
             T+{{ Math.floor(view.timeS / 60) }}:{{ String(Math.floor(view.timeS % 60)).padStart(2, '0') }}
-            · {{ t('hud.link_local') }}
+            · {{ frame.net ? t('hud.link_crew', { role: frame.net.role === 'host' ? t('session.role_host') : t('session.role_client') }) : t('hud.link_local') }}
             <span v-if="frame.timeScale > 1 && view.canAccelerate"> · ×{{ frame.timeScale }}</span>
         </div>
     </div>
 
     <!-- Лента СПУ. -->
-    <div class="pointer-events-none absolute bottom-3 left-3 w-[26rem] space-y-0.5 text-xs" data-test="intercom">
+    <!-- Субтитры фраз СПУ (раздел 12, доступность): отключаются в настройках. -->
+    <div v-if="subtitles" class="pointer-events-none absolute bottom-3 left-3 w-[26rem] space-y-0.5 text-xs" data-test="intercom">
         <div v-for="(m, i) in view.intercom" :key="`${m.tick}-${i}`" class="rounded bg-black/55 px-2 py-0.5">
             <span class="font-semibold text-amber-200">{{ speakerName(t, m.from) }}:</span>
             {{ intercomText(t, m) }}

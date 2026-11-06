@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n';
 import { Form, Head } from '@inertiajs/vue3';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -6,11 +7,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
+const { t } = useI18n();
+
 defineOptions({
     layout: {
-        title: 'Email verification',
+        title: 'ui.email_verification',
         description:
-            'Please verify your email address by clicking on the link we just emailed to you.',
+            'ui.verify_email_hint',
     },
 });
 
@@ -20,14 +23,13 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Email verification" />
+    <Head :title="t('ui.email_verification')" />
 
     <div
         v-if="status === 'verification-link-sent'"
         class="mb-4 text-center text-sm font-medium text-green-600"
     >
-        A new verification link has been sent to the email address you provided
-        during registration.
+        {{ t('ui.verification_sent') }}
     </div>
 
     <Form
@@ -37,11 +39,11 @@ defineProps<{
     >
         <Button :disabled="processing" variant="secondary">
             <Spinner v-if="processing" />
-            Resend verification email
+            {{ t('ui.resend_verification') }}
         </Button>
 
         <TextLink :href="logout()" as="button" class="mx-auto block text-sm">
-            Log out
+            {{ t('ui.log_out') }}
         </TextLink>
     </Form>
 </template>

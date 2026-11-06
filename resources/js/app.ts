@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import { initSentry } from '@/lib/sentry';
 import { configureEcho } from '@laravel/echo-vue';
 
 configureEcho({
@@ -17,8 +18,11 @@ void createInertiaApp({
     layout: (name) => {
         switch (true) {
             case name === 'Welcome':
+            case name === 'About':
             case name.startsWith('training/'):
             case name === 'missions/Solo':
+            case name.startsWith('play/'):
+            case name.startsWith('debrief/'):
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
@@ -29,6 +33,7 @@ void createInertiaApp({
         }
     },
     withApp: (app) => {
+        initSentry(app);
         app.directive('focus', {
             mounted: (el: HTMLElement, shouldFocus) => {
                 if (shouldFocus.value !== false) {

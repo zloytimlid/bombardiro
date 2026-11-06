@@ -37,8 +37,9 @@ it('is idempotent', function (): void {
 
     expect(AircraftType::query()->count())->toBe(1)
         ->and(Airframe::query()->count())->toBe(1)
-        ->and(Theatre::query()->count())->toBe(1)
-        ->and(Mission::query()->where('slug', 'milk-run')->count())->toBe(1);
+        ->and(Theatre::query()->count())->toBe(2)
+        ->and(Mission::query()->where('slug', 'milk-run')->count())->toBe(1)
+        ->and(Mission::query()->whereIn('slug', ['avignon', 'brenner'])->count())->toBe(2);
 });
 
 it('renders a training for every one of the 8 stations', function (Station $station): void {

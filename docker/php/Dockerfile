@@ -17,6 +17,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
+COPY docker/php/fpm-pool.conf /usr/local/etc/php-fpm.d/zz-pool.conf
 COPY --chmod=0755 docker/php/entrypoint.sh /usr/local/bin/app-entrypoint
 
 ARG UID=1000
@@ -26,3 +27,20 @@ RUN groupmod -o -g ${GID} www-data && usermod -o -u ${UID} -g ${GID} www-data
 WORKDIR /var/www/html
 ENTRYPOINT ["app-entrypoint"]
 CMD ["php-fpm"]
+
+# ── Продакшен (docs/ops.md): код в образе, без dev-зависимостей, ассеты собраны, opcache без проверки файлов.
+FROM base AS prod
+COPY docker/php/php-prod.ini /usr/local/etc/php/conf.d/zz-prod.ini
+COPY --chown=www-data:www-data . /var/www/html
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress \
+    && npm ci --no-audit --no-fund \
+    && php artisan wayfinder:generate --with-form --no-interaction \
+    && npm run build \
+    && rm -rf node_modules public/hot \
+    && chown -R www-data:www-data storage bootstrap/cache
+USER www-data
+
+# ── Статика для nginx из того же сборочного образа.
+FROM nginx:1.27-alpine AS web
+COPY docker/nginx/prod.conf /etc/nginx/conf.d/default.conf
+COPY --from=prod /var/www/html/public /var/www/html/public

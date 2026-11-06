@@ -1,0 +1,7 @@
+# TLS-прокси продакшена: сертификат Let's Encrypt для APP_DOMAIN, HTTP/2, сжатие; дальше — nginx (PHP и Reverb).
+{$APP_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:80 {
+		header_up X-Forwarded-Proto https
+	}
+}

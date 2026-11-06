@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Domain\Accounts\Actions\AccountService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
@@ -39,7 +40,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('settings.profile_updated')]);
 
         return to_route('profile.edit');
     }
@@ -47,13 +48,14 @@ class ProfileController extends Controller
     /**
      * Delete the user's profile.
      */
-    public function destroy(ProfileDeleteRequest $request): RedirectResponse
+    public function destroy(ProfileDeleteRequest $request, AccountService $accounts): RedirectResponse
     {
         $user = $this->authUser($request);
 
         Auth::logout();
 
-        $user->delete();
+        // Раздел 13: данные стираются, статистика вылетов экипажа обезличивается.
+        $accounts->delete($user);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

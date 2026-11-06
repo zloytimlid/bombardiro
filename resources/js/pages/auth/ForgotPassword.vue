@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n';
 import { Form, Head } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
 import TextLink from '@/components/TextLink.vue';
@@ -9,10 +10,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
+const { t } = useI18n();
+
 defineOptions({
     layout: {
-        title: 'Forgot password',
-        description: 'Enter your email to receive a password reset link',
+        title: 'ui.forgot_password_title',
+        description: 'ui.forgot_description',
     },
 });
 
@@ -22,7 +25,7 @@ defineProps<{
 </script>
 
 <template>
-    <Head title="Forgot password" />
+    <Head :title="t('ui.forgot_password_title')" />
 
     <div
         v-if="status"
@@ -34,14 +37,14 @@ defineProps<{
     <div class="space-y-6">
         <Form v-bind="email.form()" v-slot="{ errors, processing }">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">{{ t('ui.email_address') }}</Label>
                 <Input
                     id="email"
                     type="email"
                     name="email"
                     autocomplete="off"
                     v-focus
-                    placeholder="email@example.com"
+                    :placeholder="t('ui.email_placeholder')"
                 />
                 <InputError :message="errors.email" />
             </div>
@@ -53,14 +56,14 @@ defineProps<{
                     data-test="email-password-reset-link-button"
                 >
                     <Spinner v-if="processing" />
-                    Email password reset link
+                    {{ t('ui.send_reset_link') }}
                 </Button>
             </div>
         </Form>
 
         <div class="space-x-1 text-center text-sm text-muted-foreground">
-            <span>Or, return to</span>
-            <TextLink :href="login()">log in</TextLink>
+            <span>{{ t('ui.or_return_to') }}</span>
+            <TextLink :href="login()">{{ t('ui.log_in_lower') }}</TextLink>
         </div>
     </div>
 </template>

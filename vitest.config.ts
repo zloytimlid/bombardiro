@@ -10,6 +10,8 @@ export default defineConfig({
     },
     test: {
         environment: 'node',
+        // Длинные прогоны миссий «все 8 — ИИ» грузят процессор: соседним тестам — запас по времени.
+        testTimeout: 30000,
         include: ['resources/js/**/*.test.ts', 'tests/js/**/*.test.ts'],
         coverage: {
             provider: 'v8',

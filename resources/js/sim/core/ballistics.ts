@@ -18,6 +18,8 @@ export type Bullet = {
     ageS: number;
     tracer: boolean;
     damage: number;
+    /** Компенсация задержки стрелка: на сколько тиков откатить цели при проверке попадания (раздел 9.1). */
+    lagTicks?: number;
 };
 
 export function stepBullet(bullet: Bullet, dragKPerM: number, dt: number): { from: Vec3; to: Vec3 } {

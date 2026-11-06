@@ -15,7 +15,7 @@ final class MissionCatalogController extends Controller
 {
     public function index(): JsonResponse
     {
-        $missions = Mission::query()->latestPublished()->orderBy('id')->get();
+        $missions = Mission::query()->latestPublished()->catalogOrder()->get();
 
         return response()->json([
             'data' => $missions->map(fn (Mission $m): array => [

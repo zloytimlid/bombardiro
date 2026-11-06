@@ -24,6 +24,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::inertia('settings/appearance', 'settings/Appearance')->name('appearance.edit');
+    // Управление, геймпад, графика, звук, доступность (раздел 12).
+    Route::inertia('settings/game', 'settings/Game')->name('game-settings.edit');
 });
 
 Route::get('.well-known/passkey-endpoints', function () {

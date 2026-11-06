@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Square, SquareCheck } from '@lucide/vue';
 import { computed } from 'vue';
 import { useI18n } from '@/composables/useI18n';
 import { fixed, KG_PER_US_GAL } from '@/game/ui/format';
@@ -78,7 +79,9 @@ const hold = (index: 0 | 1, field: 'starter' | 'primer', value: boolean): void =
                     :class="view.checklists[list.id][item] ? 'text-emerald-300' : 'text-stone-300 hover:text-white'"
                     @click="emit('act', { type: 'checklist', list: list.id, item })"
                 >
-                    {{ view.checklists[list.id][item] ? '☑' : '☐' }} {{ t(`checklist_item.${item}`) }}
+                    <SquareCheck v-if="view.checklists[list.id][item]" class="inline size-3.5 align-[-2px]" aria-hidden="true" />
+                    <Square v-else class="inline size-3.5 align-[-2px]" aria-hidden="true" />
+                    {{ t(`checklist_item.${item}`) }}
                 </button>
             </div>
         </div>

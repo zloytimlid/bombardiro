@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
 import BombardierPanel from '@/components/game/BombardierPanel.vue';
 import CopilotPanel from '@/components/game/CopilotPanel.vue';
@@ -12,8 +12,11 @@ import PilotPanel from '@/components/game/PilotPanel.vue';
 import RadioPanel from '@/components/game/RadioPanel.vue';
 import { useI18n } from '@/composables/useI18n';
 import type { GameFrame, GameHandle } from '@/game/boot';
+import { codeLabel, indexBindings } from '@/game/input/bindings';
+import { applyUiScale, inputPrefsFrom, withDefaults } from '@/game/settings';
 import { dashboard } from '@/routes';
 import type { Debrief, Station, TheatreConfig, WorldAction } from '@/sim/core';
+import type { NetBootstrapData, UserSettingsData } from '@/types/generated/net';
 
 /**
  * Игровой экран (раздел 12): canvas + оверлеи Vue поверх него без перерисовки 3D.
@@ -28,8 +31,14 @@ const props = defineProps<{
     mission: Record<string, unknown>;
     theatre: { name: string; placeholder: boolean; definition: Record<string, unknown> };
     maxTimeScale?: number;
+    /** Кооператив (этап 3): данные сессии, места игроков, отладочная задержка сети. */
+    net?: { bootstrap: NetBootstrapData; humans: Station[]; delayMs: number };
+    graphics?: 'low' | 'medium' | 'high';
+    /** Кампания: прочность зон борта; звено: канал и место в строю (этап 6). */
+    initialZones?: Record<string, number>;
+    flight?: { ulid: string; slot: number; name: string } | null;
 }>();
-const emit = defineEmits<{ again: [] }>();
+const emit = defineEmits<{ again: []; finished: [] }>();
 const { t } = useI18n();
 
 const container = ref<HTMLDivElement | null>(null);
@@ -40,7 +49,66 @@ const showHelp = ref(true);
 const wheel = ref(false);
 const demo = ref(false);
 const debrief = shallowRef<Debrief | null>(null);
+const chat = ref<{ from: string; text: string }[]>([]);
+const chatText = ref('');
+const finished = ref(false);
+const voice = ref<{ enabled: boolean; peers: number; error: string | null }>({ enabled: false, peers: 0, error: null });
+const talking = ref<number[]>([]);
+const pttKey = computed(() => inputPrefsFrom(settings.value).bindings.voice_ptt[0] ?? 'KeyN');
+
+async function toggleVoice(): Promise<void> {
+    if (voice.value.enabled) {
+        game?.disableVoice();
+
+        return;
+    }
+
+    const ice = (page.props.voice as { ice?: { urls: string; username?: string; credential?: string }[] } | undefined)?.ice ?? [];
+
+    await game?.enableVoice(ice, {
+        onState: (s) => (voice.value = s),
+        onTalking: (id, on) => (talking.value = on ? [...new Set([...talking.value, id])] : talking.value.filter((x) => x !== id)),
+    });
+}
+
+// Тангента: говорить, пока клавиша нажата.
+const onVoiceKey = (e: KeyboardEvent): void => {
+    if (!voice.value.enabled || e.repeat || !(keymap.value.get(e.code) ?? []).includes('voice_ptt')) {
+        return;
+    }
+
+    game?.setTalking(e.type === 'keydown');
+};
 let game: GameHandle | null = null;
+
+const netState = computed(() => frame.value?.net ?? null);
+const seatChangeIn = computed(() => {
+    // От кадра, а не от статуса: обратный отсчёт обновляется с каждым кадром.
+    const at = frame.value?.net?.seatChangeAt ?? null;
+
+    return at === null ? null : Math.max(0, Math.ceil((at - performance.now()) / 1000));
+});
+
+function callsign(userId: number): string {
+    return netState.value?.roster.find((r) => r.user_id === userId)?.callsign ?? `#${userId}`;
+}
+
+function finish(): void {
+    if (!finished.value) {
+        finished.value = true;
+        // Хост сначала выгружает журнал и итог (POST /finish), клиенты — небольшая пауза на последние события.
+        void Promise.all([game?.flushed(), new Promise((resolve) => window.setTimeout(resolve, 1500))]).then(() => emit('finished'));
+    }
+}
+
+function sendChat(): void {
+    const text = chatText.value.trim();
+
+    if (text !== '') {
+        game?.sendChat(text);
+        chatText.value = '';
+    }
+}
 
 const unsupported = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches && window.innerWidth < 1024;
 
@@ -61,14 +129,24 @@ const gunner = computed(() => {
     return s === 'top_gunner' || s === 'waist_gunner' || s === 'tail_gunner' || (s === 'radio' && f?.scope === true) || (s === 'bombardier' && f?.scope === false);
 });
 
+const page = usePage();
+const settings = computed(() => withDefaults(page.props.settings as UserSettingsData | null | undefined));
+const keymap = computed(() => indexBindings(inputPrefsFrom(settings.value).bindings));
+
 const onKey = (e: KeyboardEvent): void => {
-    if (e.code === 'KeyQ' && !e.repeat) {
+    if (e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) {
+        return;
+    }
+
+    const actions = keymap.value.get(e.code) ?? [];
+
+    if (actions.includes('intercom_wheel') && !e.repeat) {
         wheel.value = !wheel.value;
 
         if (wheel.value && document.pointerLockElement) {
             document.exitPointerLock();
         }
-    } else if (e.code === 'F1') {
+    } else if (actions.includes('help')) {
         e.preventDefault();
         showHelp.value = !showHelp.value;
     }
@@ -76,6 +154,9 @@ const onKey = (e: KeyboardEvent): void => {
 
 onMounted(async () => {
     window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onVoiceKey);
+    window.addEventListener('keyup', onVoiceKey);
+    applyUiScale(settings.value);
 
     if (unsupported) {
         loading.value = false;
@@ -105,10 +186,29 @@ onMounted(async () => {
                 difficulty: props.difficulty,
                 seed: props.seed,
                 maxTimeScale: props.maxTimeScale ?? 4,
+                graphics: props.graphics,
+                settings: settings.value,
+                initialZones: props.initialZones,
+                flight: props.flight ?? null,
+                telemetry: page.props.auth?.user !== null && page.props.auth?.user !== undefined,
+                net: props.net
+                    ? {
+                          ...props.net,
+                          callbacks: {
+                              onEnded: finish,
+                              onChat: (from, text) => {
+                                  chat.value = [...chat.value.slice(-19), { from: callsign(from), text }];
+                              },
+                          },
+                      }
+                    : undefined,
                 onFrame: (f) => {
                     frame.value = f;
 
-                    if (f.view.phase === 'debrief' && props.mode === 'mission' && debrief.value === null) {
+                    if (f.view.phase === 'debrief' && props.net) {
+                        // Кооператив: разбор считает сервер по журналу (раздел 9.4).
+                        finish();
+                    } else if (f.view.phase === 'debrief' && props.mode === 'mission' && debrief.value === null) {
                         void game?.debrief().then((d) => (debrief.value = d));
                     }
                 },
@@ -123,6 +223,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     window.removeEventListener('keydown', onKey);
+    window.removeEventListener('keydown', onVoiceKey);
+    window.removeEventListener('keyup', onVoiceKey);
     game?.dispose();
 });
 
@@ -158,7 +260,7 @@ async function restart(): Promise<void> {
         <div v-else-if="loading" class="absolute inset-0 flex items-center justify-center">{{ t('training.loading') }}</div>
 
         <template v-if="frame && view && !debrief">
-            <GameHud :frame="frame" :mode="mode" @switch="switchStation" />
+            <GameHud :frame="frame" :mode="mode" :subtitles="settings.subtitles" @switch="switchStation" />
 
             <PilotPanel v-if="station === 'pilot'" :view="view" @act="act" />
             <CopilotPanel v-else-if="station === 'copilot'" :view="view" :checklists="frame.statics.checklists" @act="act" />
@@ -185,8 +287,10 @@ async function restart(): Promise<void> {
                 >
                     ×{{ s }}
                 </button>
-                <button class="rounded bg-black/60 px-2 py-1 hover:bg-black/80" @click="game?.togglePause()">{{ t('training.pause') }}</button>
-                <button class="rounded bg-black/60 px-2 py-1 hover:bg-black/80" @click="restart">{{ t('training.restart') }}</button>
+                <template v-if="!net">
+                    <button class="rounded bg-black/60 px-2 py-1 hover:bg-black/80" @click="game?.togglePause()">{{ t('training.pause') }}</button>
+                    <button class="rounded bg-black/60 px-2 py-1 hover:bg-black/80" @click="restart">{{ t('training.restart') }}</button>
+                </template>
                 <Link :href="dashboard()" class="rounded bg-black/60 px-2 py-1 hover:bg-black/80">{{ t('training.exit') }}</Link>
             </div>
 
@@ -203,6 +307,48 @@ async function restart(): Promise<void> {
             </div>
 
             <IntercomWheel v-if="wheel" @act="act" @close="wheel = false" />
+
+            <!-- Кооператив: состояние сети, смена места, смена хоста, чат (раздел 9). -->
+            <template v-if="netState">
+                <div class="pointer-events-none absolute top-[6.5rem] right-3 rounded bg-black/55 px-2 py-1 font-mono text-xs" data-test="net-status" :data-role="netState.role" :data-tick="view.tick" :data-host="netState.hostUserId">
+                    {{ netState.role === 'host' ? t('session.role_host') : t('session.role_client') }}
+                    <span v-if="netState.rttMs !== null"> · {{ t('session.rtt', { ms: netState.rttMs }) }}</span>
+                    <span v-if="!netState.connected" class="text-red-400"> · {{ t('session.offline') }}</span>
+                </div>
+                <div v-if="seatChangeIn !== null" class="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 rounded bg-black/70 px-4 py-2 text-lg" data-test="seat-change">
+                    {{ t('session.seat_change', { s: seatChangeIn }) }}
+                </div>
+                <div v-if="netState.migrating" class="pointer-events-none absolute inset-x-0 top-1/4 text-center" data-test="host-migration">
+                    <span class="rounded bg-amber-800/90 px-5 py-2 text-xl">{{ t('session.host_migration') }}</span>
+                </div>
+                <div class="pointer-events-auto absolute top-[8.5rem] right-3 flex items-center gap-2 rounded bg-black/55 px-2 py-1 text-xs" data-test="voice">
+                    <button class="rounded bg-black/60 px-2 py-0.5 hover:bg-black/80" data-test="voice-toggle" @click="toggleVoice">
+                        {{ voice.enabled ? t('voice.disable') : t('voice.enable') }}
+                    </button>
+                    <span v-if="voice.enabled">{{ t('voice.ptt', { key: codeLabel(pttKey) }) }} · {{ t('voice.peers', { n: voice.peers }) }}</span>
+                    <span v-if="voice.error" class="text-red-400">{{ t('voice.error') }}</span>
+                    <span v-for="id in talking" :key="id" class="rounded bg-green-700 px-1">{{ callsign(id) }} — {{ t('voice.talking') }}</span>
+                </div>
+                <div v-if="netState.protocolError" class="absolute inset-0 flex items-center justify-center bg-black/70 text-lg">{{ t('session.error.protocol') }}</div>
+                <div class="pointer-events-auto absolute bottom-40 right-3 w-72 space-y-1 text-xs" data-test="chat">
+                    <div v-for="(m, i) in chat" :key="i" class="rounded bg-black/50 px-2 py-0.5">
+                        <span class="text-amber-300">{{ m.from }}:</span> {{ m.text }}
+                    </div>
+                    <form class="flex gap-1" @submit.prevent="sendChat">
+                        <input
+                            v-model="chatText"
+                            maxlength="200"
+                            class="min-w-0 flex-1 rounded bg-black/60 px-2 py-1"
+                            :placeholder="t('session.chat_placeholder')"
+                            data-test="chat-input"
+                            @keydown.stop
+                            @keyup.stop
+                        />
+                        <button class="rounded bg-black/60 px-2 py-1">{{ t('session.chat_send') }}</button>
+                    </form>
+                </div>
+            </template>
+            <div v-if="finished" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 text-2xl" data-test="session-finished">{{ t('session.finished') }}</div>
 
             <div v-if="frame.paused" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 text-2xl">{{ t('training.paused') }}</div>
 
