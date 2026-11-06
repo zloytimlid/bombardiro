@@ -18,8 +18,10 @@ elif [ "${APP_BOOTSTRAP:-0}" = "1" ]; then
         php artisan key:generate --force
     fi
     php artisan storage:link >/dev/null 2>&1 || true
-    # Журнал могли создать artisan-команды от root (docker compose exec) — PHP-FPM пишет от www-data.
-    touch storage/logs/laravel.log && chmod 666 storage/logs/laravel.log || true
+    # Файлы в storage/ (журнал, скомпилированные шаблоны, кэш) могли создать artisan-команды от root
+    # (docker compose exec, wayfinder:generate при сборке) — PHP-FPM пишет от www-data.
+    touch storage/logs/laravel.log || true
+    chmod -R a+rwX storage bootstrap/cache 2>/dev/null || true
 else
     i=0
     until [ -f vendor/autoload.php ] && [ -f .env ]; do

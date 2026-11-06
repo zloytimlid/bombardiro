@@ -100,7 +100,8 @@ it('stores the migration snapshot in Redis and never overwrites a newer one', fu
 it('migrates the host only when the host has gone silent', function (): void {
     [$session, $host, $guest] = activeSession();
 
-    // Хост на связи — смены нет.
+    // Хост на связи (отметка пульса впереди порога больше, чем сервер готов ждать) — смены нет, ответ сразу.
+    Cache::put(Protocol::hostSeenKey($session->ulid), now()->getPreciseTimestamp(3) / 1000 + 3, 600);
     $this->actingAs($guest)->postJson(route('api.sessions.host-lost', $session))->assertOk()->assertJsonPath('host_user_id', $host->id);
     Event::assertNotDispatched(HostChanged::class);
 
@@ -113,6 +114,35 @@ it('migrates the host only when the host has gone silent', function (): void {
     // Новый хост теперь пишет журнал, старый — нет.
     postEvents($session, $guest, [['seq' => 1, 'tick' => 1, 'type' => 'host_changed', 'payload' => []]])->assertOk();
     postEvents($session, $host, [['seq' => 2, 'tick' => 2, 'type' => 'phase', 'payload' => []]])->assertForbidden();
+});
+
+it('waits briefly for the silence threshold instead of making the client report again', function (): void {
+    [$session, $host, $guest] = activeSession();
+
+    // Хост пропал 0,5 с назад: до порога 0,5 с — сервер дожидается его в этом же запросе и выбирает нового хоста.
+    Cache::put(Protocol::hostSeenKey($session->ulid), now()->getPreciseTimestamp(3) / 1000 - 0.5, 600);
+    $started = microtime(true);
+
+    $this->actingAs($guest)->postJson(route('api.sessions.host-lost', $session))->assertOk()->assertJsonPath('host_user_id', $guest->id);
+
+    expect(microtime(true) - $started)->toBeGreaterThan(0.4)->toBeLessThan(Protocol::HOST_LOST_WAIT_SECONDS + 1);
+    Event::assertDispatched(HostChanged::class);
+});
+
+it('measures host silence by request arrival, not by when PHP got to the request', function (): void {
+    [$session, $host, $guest] = activeSession();
+    $now = now()->getPreciseTimestamp(3) / 1000;
+
+    // Сообщение о потере пришло 3 с назад и ждало в очереди PHP-FPM, а пульс хоста пришёл через 1 с после него
+    // и уже обработан. По времени прихода хост на связи — смены нет (по времени обработки «молчал» бы 2 с).
+    Cache::put(Protocol::hostSeenKey($session->ulid), $now - 2, 600);
+    $this->actingAs($guest)->withServerVariables(['REQUEST_START' => sprintf('%.3f', $now - 3)])
+        ->postJson(route('api.sessions.host-lost', $session))->assertOk()->assertJsonPath('host_user_id', $host->id);
+    Event::assertNotDispatched(HostChanged::class);
+
+    // Подделанное «время прихода» из будущего игнорируется: считается текущее время, хост молчит 2 с.
+    $this->actingAs($guest)->withServerVariables(['REQUEST_START' => sprintf('%.3f', $now + 60)])
+        ->postJson(route('api.sessions.host-lost', $session))->assertOk()->assertJsonPath('host_user_id', $guest->id);
 });
 
 it('gives a freshly elected host time to restore the world before it can be voted out', function (): void {

@@ -19,5 +19,16 @@ export default defineConfig({
         trace: 'retain-on-failure',
         locale: 'ru-RU',
     },
-    projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+    projects: [
+        {
+            name: 'chromium',
+            use: {
+                ...devices['Desktop Chrome'],
+                // Без флагов headless Chromium рисует WebGL на процессоре (SwiftShader): три вкладки кооператива
+                // съедают CPU, и серверу не хватает ресурсов (ответы по 5–15 с, смена хоста не укладывается в срок).
+                // На Windows — видеокарта через ANGLE/D3D11; на CI (Linux без GPU) — как было.
+                launchOptions: process.platform === 'win32' ? { args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] } : {},
+            },
+        },
+    ],
 });

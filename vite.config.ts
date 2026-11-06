@@ -31,6 +31,11 @@ export default defineConfig({
             formVariants: true,
         }),
     ]),
+    // Зависимости из динамических импортов (игра, воркер, WebGPU) собрать сразу при старте: иначе Vite находит их
+    // по ходу работы, пересобирает кэш и перезагружает все открытые вкладки (рвёт кооперативный вылет и E2E).
+    optimizeDeps: {
+        include: ['three', 'three/webgpu', 'comlink', 'zod', 'laravel-echo', 'pusher-js'],
+    },
     server: {
         // В docker compose Vite слушает все интерфейсы, а браузер ходит на localhost.
         ...(process.env.VITE_DEV_SERVER_HOST
@@ -46,8 +51,20 @@ export default defineConfig({
         watch: {
             // Bind-mount с Windows не шлёт inotify-события в контейнер.
             usePolling: Boolean(process.env.VITE_DEV_SERVER_HOST),
-            interval: 300,
+            // Каждый опрос — обращения к файлам через 9P-сервер Docker Desktop (dllhost/vp9fs на Windows):
+            // при 300 мс он съедал 1,5–2,5 ядра и тормозил PHP (ответы по 5–15 с в кооперативном E2E).
+            interval: 1000,
+            binaryInterval: 3000,
             ignored: [
+                '**/app/**',
+                '**/config/**',
+                '**/bootstrap/**',
+                '**/docker/**',
+                '**/scripts/**',
+                '**/public/**',
+                '**/resources/audio/**',
+                '**/resources/images/**',
+                '**/*.pdf',
                 '**/.agents/**',
                 '**/.claude/**',
                 '**/.cursor/**',

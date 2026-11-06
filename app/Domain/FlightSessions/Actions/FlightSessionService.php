@@ -107,7 +107,8 @@ final class FlightSessionService
             }
 
             $locked->update(['status' => CrewStatus::InSession]);
-            Cache::put(Protocol::hostSeenKey($session->ulid), now()->getPreciseTimestamp(3) / 1000, Protocol::SNAPSHOT_TTL_SECONDS);
+            // Первому хосту — тот же льготный срок, что и новому после миграции: он грузит мир и рельеф.
+            Cache::put(Protocol::hostSeenKey($session->ulid), now()->getPreciseTimestamp(3) / 1000 + Protocol::NEW_HOST_GRACE_SECONDS, Protocol::SNAPSHOT_TTL_SECONDS);
 
             DB::afterCommit(fn () => SessionStarted::dispatch($session));
 
@@ -285,15 +286,31 @@ final class FlightSessionService
             return $session;
         }
 
+        // Тишина — от прихода последнего пульса хоста до «сейчас» в шкале прихода запросов (время nginx плюс
+        // сколько этот запрос уже обрабатывается): очередь PHP-FPM не превращается в мнимую тишину.
+        $arrived = Protocol::arrivedAt();
+        $started = microtime(true);
+        $silenceNow = fn (): float => $arrived + (microtime(true) - $started) - (float) Cache::get(Protocol::hostSeenKey($session->ulid), 0);
+
+        // Клиент сообщает о потере, едва хост пропал (уход из presence, 1,5 с без снапшотов). Если до порога
+        // осталось немного — дождаться его здесь: под нагрузкой повторный запрос стоит секунды. Придёт пульс —
+        // хост на месте, отказ.
+        $silence = $silenceNow();
+
+        if ($silence < Protocol::HOST_SILENCE_SECONDS && Protocol::HOST_SILENCE_SECONDS - $silence <= Protocol::HOST_LOST_WAIT_SECONDS) {
+            while ($silence < Protocol::HOST_SILENCE_SECONDS && microtime(true) - $started < Protocol::HOST_LOST_WAIT_SECONDS + 0.1) {
+                usleep(50_000);
+                $silence = $silenceNow();
+            }
+        }
+
         /** @var Lock $lock */
         $lock = Cache::lock("session:{$session->ulid}:migrate", 5);
 
         // Параллельные сообщения клиентов: ждать блокировку короткими шагами, а не по 250 мс.
-        return $lock->betweenBlockedAttemptsSleepFor(50)->block(3, function () use ($session, $reporter): FlightSession {
+        return $lock->betweenBlockedAttemptsSleepFor(50)->block(3, function () use ($session, $reporter, $silenceNow): FlightSession {
             $session->refresh();
-            $seen = (float) Cache::get(Protocol::hostSeenKey($session->ulid), 0);
-
-            $silence = now()->getPreciseTimestamp(3) / 1000 - $seen;
+            $silence = $silenceNow();
 
             if ($silence < Protocol::HOST_SILENCE_SECONDS) {
                 Log::info('host_lost_rejected', ['flight_session_id' => $session->ulid, 'reporter' => $reporter->id, 'silence_s' => round($silence, 2)]);
@@ -355,7 +372,7 @@ final class FlightSessionService
     {
         $key = Protocol::hostSeenKey($session->ulid);
         // Отметка не уходит назад: пульс во время льготного срока нового хоста её не сокращает.
-        $seen = max(now()->getPreciseTimestamp(3) / 1000 + $graceSeconds, (float) Cache::get($key, 0));
+        $seen = max(Protocol::arrivedAt() + $graceSeconds, (float) Cache::get($key, 0));
 
         Cache::put($key, $seen, Protocol::SNAPSHOT_TTL_SECONDS);
     }
