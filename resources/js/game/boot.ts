@@ -18,6 +18,7 @@ import { NetSession } from './net/netSession';
 import { createAircraftModel } from './render/aircraftModel';
 import { NOSE_ART_URL } from './render/noseArt';
 import { createCockpit } from './render/cockpit';
+import { createCrewInteriors, SHELL_HIDDEN_FROM } from './render/crewInterior';
 import { attitudeToThree, Q_CAMERA_IN_FRD, toThree } from './render/coords';
 import { createEntities } from './render/entities';
 import { drawPilotPanel } from './render/instruments';
@@ -154,6 +155,11 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
     const cockpit = createCockpit();
 
     model.root.add(cockpit.group);
+
+    // Отсеки экипажа для вида от первого лица — в осях модели, движутся вместе с ней.
+    const interiors = createCrewInteriors();
+
+    model.root.add(interiors.group);
     world.scene.add(model.root);
 
     const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 90000);
@@ -352,13 +358,18 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
         toThree(a.position, model.root.position);
         model.root.quaternion.copy(aircraftQuat);
 
-        const interior = cameraView === 'station' && COCKPIT_STATIONS.includes(station);
+        // Вид от первого лица: отсек места (стенки с окнами, кресла, оборудование). Обшивка и остекление скрыты, если
+        // глаз внутри фюзеляжа (пилоты, штурман, радист, бортовой стрелок); под остеклением (бомбардир, верхний и
+        // хвостовой стрелки) наружная модель видна. Приборная доска — пилотам и штурману (она перед ним за креслами).
+        const aboard = cameraView === 'station';
+        const hideShell = aboard && SHELL_HIDDEN_FROM.has(station);
 
         for (const part of model.exteriorOnly) {
-            part.visible = !interior;
+            part.visible = !hideShell;
         }
 
-        cockpit.group.visible = interior;
+        interiors.show(aboard ? station : null);
+        cockpit.group.visible = aboard && (COCKPIT_STATIONS.includes(station) || station === 'navigator');
 
         if (cameraView === 'external') {
             const behind = new THREE.Vector3(-32, 0, -9).applyQuaternion(aircraftQuat);
@@ -654,6 +665,7 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
             entities.dispose();
             model.dispose();
             cockpit.dispose();
+            interiors.dispose();
             world.dispose();
             renderer.dispose();
             canvas.remove();

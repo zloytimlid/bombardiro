@@ -119,6 +119,53 @@ function bodyOfRevolution(profile: [number, number][], segments: number): THREE.
     return g;
 }
 
+/**
+ * Зеркальная копия детали по размаху (левая половина из правой). Отражение меняет обход треугольников: без обмена
+ * вершин наружные грани отсекались бы, и сквозь деталь была бы видна внутренняя сторона противоположной обшивки
+ * (сверху — серый низ вместо оливкового верха, свет наоборот). Нормали отражение переносит верно.
+ */
+export function mirrorSpan<T extends THREE.BufferGeometry>(g: T): T {
+    g.scale(1, -1, 1);
+
+    const index = g.getIndex();
+
+    if (index) {
+        const a = index.array;
+
+        for (let i = 0; i + 2 < a.length; i += 3) {
+            const t = a[i + 1]!;
+
+            a[i + 1] = a[i + 2]!;
+            a[i + 2] = t;
+        }
+
+        index.needsUpdate = true;
+
+        return g;
+    }
+
+    for (const name of Object.keys(g.attributes)) {
+        const attr = g.getAttribute(name);
+        const n = attr.itemSize;
+        const arr = attr.array;
+
+        for (let v = 0; v + 2 < attr.count; v += 3) {
+            for (let k = 0; k < n; k++) {
+                const i1 = (v + 1) * n + k;
+                const i2 = (v + 2) * n + k;
+                const t = arr[i1]!;
+
+                arr[i1] = arr[i2]!;
+                arr[i2] = t;
+            }
+        }
+
+        attr.needsUpdate = true;
+    }
+
+    return g;
+}
+
 /** Крыло или оперение: трапеция в плоскости XY с толщиной, хорды по корню и концу. */
 function panel(rootChord: number, tipChord: number, span: number, thickness: number, sweepX = 0): THREE.BufferGeometry {
     const shape = new THREE.Shape();
@@ -198,24 +245,36 @@ export function createAircraftModel(markings: AircraftMarkings = DEFAULT_MARKING
 
     noseGun.rotation.z = Math.PI / 2;
 
-    // Фонарь кабины пилотов со стойками.
-    const canopy = mesh(add(new THREE.SphereGeometry(0.75, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2)), glass, 4.5, 0, -0.78);
+    // Фонарь кабины пилотов со стойками. Полусфера Three.js — куполом по +Y; в осях FRD +Y — правое крыло, «вверх» —
+    // −Z, поэтому купол поворачиваем −90° вокруг X (+Y → −Z). Масштаб — в осях полусферы до поворота: X — длина,
+    // Y — высота купола, Z — ширина.
+    const canopyRadius = 0.75;
+    const canopyHalfWidth = 0.64;
+    const canopyHeight = 0.56;
+    const canopy = mesh(add(new THREE.SphereGeometry(canopyRadius, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2)), glass, 4.5, 0, -0.78);
 
-    canopy.scale.set(2.0, 1.0, 0.75);
-    canopy.rotation.x = Math.PI;
+    canopy.name = 'canopy';
+    canopy.rotation.x = -Math.PI / 2;
+    canopy.scale.set(2.0, canopyHeight / canopyRadius, canopyHalfWidth / canopyRadius);
+
+    // Дуги переплёта — поперёк фюзеляжа над фонарём: дуга тора (плоскость XY, π) → X тора — вправо (+Y), Y тора —
+    // вверх (−Z); по размерам — как купол в этом сечении.
+    const archBasis = new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1), new THREE.Vector3(-1, 0, 0));
 
     for (const x of [3.6, 4.5, 5.3]) {
-        const arch = mesh(add(new THREE.TorusGeometry(0.72, 0.03, 4, 16, Math.PI)), frame, x, 0, -0.78);
+        const arch = mesh(add(new THREE.TorusGeometry(1, 0.03, 4, 18, Math.PI)), frame, x, 0, -0.78);
+        // Сечение эллипсоида купола на этом x: полуоси уменьшаются к краям фонаря.
+        const k = Math.sqrt(Math.max(0, 1 - ((x - 4.5) / (2.0 * canopyRadius)) ** 2));
 
-        arch.rotation.y = Math.PI / 2;
-        arch.rotation.x = Math.PI;
-        arch.scale.set(1, 1, 0.75);
+        arch.setRotationFromMatrix(archBasis);
+        arch.scale.set(canopyHalfWidth * k, canopyHeight * k, 1);
     }
 
-    // Верхняя турель за кабиной, хвостовая точка стрелка, бортовые окна.
-    const turret = mesh(add(new THREE.SphereGeometry(0.55, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2)), glass, 1.9, 0, -0.9);
+    // Верхняя турель за кабиной (купол — тем же поворотом, что и фонарь), хвостовая точка стрелка, бортовые окна.
+    const turret = mesh(add(new THREE.SphereGeometry(0.55, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2)), glass, 1.9, 0, -0.9);
 
-    turret.rotation.x = Math.PI;
+    turret.name = 'top_turret';
+    turret.rotation.x = -Math.PI / 2;
 
     for (const side of [-0.12, 0.12]) {
         const barrel = mesh(add(new THREE.CylinderGeometry(0.025, 0.025, 1.1, 6)), dark, 2.4, side, -1.15);
@@ -239,20 +298,21 @@ export function createAircraftModel(markings: AircraftMarkings = DEFAULT_MARKING
         const inner = add(panel(4.2, 3.6, 2.97, 0.42));
 
         if (side < 0) {
-            inner.scale(1, -1, 1);
+            mirrorSpan(inner);
         }
 
-        const innerMesh = mesh(paint(inner, (z) => z + wingZ, 0.0), painted, 0.6, 0, wingZ, false);
+        // Граница окраски — по середине детали: верх оливковый, низ серый.
+        const innerMesh = mesh(paint(inner, (z) => z + wingZ, wingZ), painted, 0.6, 0, wingZ, false);
 
         innerMesh.rotation.x = side * -0.07;
 
         const outer = add(panel(3.6, 1.4, 7.33, 0.3, -0.25));
 
         if (side < 0) {
-            outer.scale(1, -1, 1);
+            mirrorSpan(outer);
         }
 
-        const outerMesh = mesh(paint(outer, (z) => z + wingZ, 0.0), painted, 0.6, side * 2.97, wingZ - 0.2, false);
+        const outerMesh = mesh(paint(outer, (z) => z + wingZ - 0.2, wingZ - 0.2), painted, 0.6, side * 2.97, wingZ - 0.2, false);
 
         outerMesh.rotation.x = side * 0.03;
     }
@@ -262,10 +322,10 @@ export function createAircraftModel(markings: AircraftMarkings = DEFAULT_MARKING
         const stab = add(panel(1.9, 1.2, 3.35, 0.16));
 
         if (side < 0) {
-            stab.scale(1, -1, 1);
+            mirrorSpan(stab);
         }
 
-        mesh(paint(stab, (z) => z - 0.35, 0.0), painted, -7.7, 0, -0.35, false).rotation.x = side * -0.08;
+        mesh(paint(stab, (z) => z - 0.35, -0.35), painted, -7.7, 0, -0.35, false).rotation.x = side * -0.08;
 
         const fin = mesh(add(new THREE.SphereGeometry(1, 16, 12)), olive, -7.9, side * 3.35, -0.95, false);
 

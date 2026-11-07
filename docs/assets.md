@@ -14,9 +14,12 @@
 | resources/js/game/render/aircraftModel.ts | Модель B-25J и ливрея (процедурная геометрия, текстуры canvas) | собственный | проект | — |
 | resources/js/game/render/aircraftModel.ts#insignia | Опознавательный знак ВВС США 1943–47 (звезда с полосами) | государственная символика США | общественное достояние | — |
 | resources/js/game/render/cockpit.ts | Кабина и приборная доска (процедурная, canvas) | собственный | проект | — |
+| resources/js/game/render/crewInterior.ts | Отсеки экипажа для вида от первого лица: кабина, штурман, нос, турель, радист и бортовые стрелки, хвост (процедурные) | собственный | проект | — |
 | resources/js/game/render/world.ts | Рельеф, вода, полоса, небо (процедурные) | собственный | проект | — |
 | resources/js/game/render/entities.ts | Истребители, ведомые, разрывы, трассеры (процедурные) | собственный | проект | — |
 | resources/js/game/menu/menuScene.ts | Сцена главного меню: аэродром, стоянка, вышка | собственный | проект | — |
+| resources/js/game/menu/airfieldProps.ts | Постройки аэродрома в меню: ангары, бараки, склады, капониры, зенитки, лагерь, машины (процедурные) | собственный | проект | — |
+| resources/js/game/menu/roads.ts | Сервисные дороги в меню (процедурная лента по рельефу) | собственный | проект | — |
 | resources/js/game/audio/sound.ts | Звук: двигатели, поток, пулемёты, зенитки, рация (синтез WebAudio) | собственный | проект | — |
 | resources/sim/theatres/mto-west.json | Рельеф Корсики, юга Франции и севера Италии (грубая береговая линия и хребты) | собственная оцифровка общей географии | проект | — |
 | fonts: Instrument Sans | Шрифт интерфейса (через Bunny Fonts) | Rodrigo Fuenzalida, Jordan Egstad | SIL Open Font License 1.1 | Instrument Sans © The Instrument Sans Project Authors |

@@ -213,12 +213,12 @@
         "value": {
             "pilot": [4.6, -0.45, -0.55],
             "copilot": [4.6, 0.45, -0.55],
-            "bombardier": [7.3, 0, 0.15],
+            "bombardier": [7.05, 0, 0.1],
             "navigator": [3.4, 0, -0.35],
-            "top_gunner": [2.6, 0, -1.95],
-            "radio": [-3.6, -0.7, -0.55],
-            "waist_gunner": [-3.6, 0.7, -0.55],
-            "tail_gunner": [-8.0, 0, -0.65]
+            "top_gunner": [1.9, 0, -1.2],
+            "radio": [-3.6, -0.35, -0.45],
+            "waist_gunner": [-3.6, 0.45, -0.35],
+            "tail_gunner": [-8.5, 0, -0.1]
         }
     },
     "systems": {

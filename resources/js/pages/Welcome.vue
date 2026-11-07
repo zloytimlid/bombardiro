@@ -53,7 +53,11 @@ onMounted(async () => {
             const [{ mountMenuScene }, { CORSICA_ALESAN }] = await Promise.all([import('@/game/menu/menuScene'), import('@/sim/core/terrain')]);
 
             if (background.value) {
-                disposeScene = mountMenuScene(background.value, CORSICA_ALESAN).dispose;
+                // Отладка сцены в разработке: ?debug_menu=takeoff | landing | formation | traffic.
+                const debug = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('debug_menu') : null;
+                const only = debug === 'takeoff' || debug === 'landing' || debug === 'formation' || debug === 'traffic' ? debug : undefined;
+
+                disposeScene = mountMenuScene(background.value, CORSICA_ALESAN, { only }).dispose;
             }
         } catch {
             // Без фона меню остаётся рабочим.
