@@ -7,8 +7,18 @@ import { initializeFlashToast } from '@/lib/flashToast';
 import { initSentry } from '@/lib/sentry';
 import { configureEcho } from '@laravel/echo-vue';
 
+// Reverb — на том же хосте и порту, что и страница: nginx (и Caddy в продакшене) проксирует /app на Reverb.
+// Так вебсокет работает и на localhost:8000, и за https-туннелем или доменом, без пересборки под адрес.
+const secure = window.location.protocol === 'https:';
+const pagePort = Number(window.location.port) || (secure ? 443 : 80);
+
 configureEcho({
     broadcaster: 'reverb',
+    wsHost: window.location.hostname,
+    wsPort: pagePort,
+    wssPort: pagePort,
+    forceTLS: secure,
+    enabledTransports: ['ws', 'wss'],
 });
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

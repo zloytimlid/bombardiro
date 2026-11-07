@@ -110,3 +110,16 @@ docker compose -f compose.prod.yaml up -d
 
 Критерий этапа 5 — ≥ 10 экипажей без критических ошибок в Sentry за 7 дней — проверяется на развёрнутом стенде
 после выката; отчёт — в `docs/todo.md`.
+
+## Временная публичная ссылка (демо со своего ПК)
+
+Без сервера и аккаунтов — быстрый туннель Cloudflare на локальный стенд (`*.trycloudflare.com`, адрес меняется при
+каждом запуске, работает, пока включены ПК и Docker):
+
+1. Собрать фронтенд и остановить dev-сервер Vite: `docker compose exec vite npm run build`, `docker compose stop vite`,
+   удалить `public/hot` (иначе страницы ссылаются на `localhost:5173`).
+2. Запустить туннель: `cloudflared tunnel --no-autoupdate --url http://localhost:8000` — в выводе будет адрес.
+3. В `.env`: `APP_URL=<адрес туннеля>`, `APP_DEBUG=false`.
+
+Обратно к разработке: `APP_URL=http://localhost:8000`, `APP_DEBUG=true`, `docker compose start vite`, остановить
+cloudflared.

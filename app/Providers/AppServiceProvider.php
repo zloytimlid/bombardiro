@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Livewire;
@@ -34,6 +35,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // Сайт за HTTPS-прокси (APP_URL https://…): ссылки и редиректы — от APP_URL, а не от заголовка Host,
+        // который прокси может подменить на адрес сервера за ним.
+        $appUrl = (string) config('app.url');
+
+        if (str_starts_with($appUrl, 'https://')) {
+            URL::forceRootUrl($appUrl);
+            URL::forceScheme('https');
+        }
 
         // Discord для Socialite (socialiteproviders/discord); карточка телеметрии в Pulse.
         Event::listen(SocialiteWasCalled::class, [DiscordExtendSocialite::class, 'handle']);
