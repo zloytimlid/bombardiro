@@ -55,3 +55,7 @@ yarn-error.log
 # Треки меню — локальные файлы игрока (права на музыку), в репозиторий не попадают.
 /resources/audio/menu/*
 !/resources/audio/menu/README.md
+
+# Записи двигателей — локальные файлы (права на запись), в репозиторий не попадают.
+/resources/audio/engine/*
+!/resources/audio/engine/README.md

@@ -1,9 +1,11 @@
 import type { Station } from '@/sim/core';
 import type { WorldView } from '@/sim/view';
+import { engineSampleUrl, samplePlaybackRate, seamlessLoop, steadiestWindow } from './engineSample';
 
 /**
- * Звук (раздел 12) — синтез WebAudio без звуковых файлов (нет сторонних ассетов):
- * двигатели по оборотам и наддуву (основной тон — частота вспышек 14-цилиндровой звезды, 7 на оборот),
+ * Звук (раздел 12) — синтез WebAudio: двигатели по оборотам и наддуву (основной тон — частота вспышек
+ * 14-цилиндровой звезды, 7 на оборот; если в resources/audio/engine/ лежит запись — она звучит поверх петлёй,
+ * скорость по оборотам, см. engineSample.ts),
  * панорама по станции; шум потока от скорости; очереди M2; разрывы зениток с задержкой по расстоянию;
  * щелчок и шорох рации на фразах СПУ (сами фразы — субтитрами). Категории громкости: общая,
  * двигатели, оружие, СПУ, интерфейс; хранятся в браузере (настройки — этап 5).
@@ -134,6 +136,51 @@ export function createSound(target: Window = window): SoundEngine {
         return { side, saw, sub, exhaust, lp, gain, pan };
     });
 
+    // Запись двигателя (resources/audio/engine/, если файл есть): петля на каждый мотор поверх синтеза, скорость —
+    // по оборотам. Пока не загружена или файла нет — звучит только синтез.
+    const sampleVoices: { src: AudioBufferSourceNode; gain: GainNode }[] = [];
+    let sampleNorm = 0;
+    let disposed = false;
+    const loadEngineSample = async (url: string): Promise<void> => {
+        try {
+            const decoded = await ctx.decodeAudioData(await (await fetch(url)).arrayBuffer());
+            const rate = decoded.sampleRate;
+            const span = steadiestWindow(decoded.getChannelData(0), rate);
+            const channels = Array.from({ length: decoded.numberOfChannels }, (_, i) => decoded.getChannelData(i));
+            const loop = seamlessLoop(channels, Math.floor(span.startS * rate), Math.floor(span.endS * rate), Math.floor(rate * 0.5));
+            const buffer = ctx.createBuffer(loop.length, loop[0]!.length, rate);
+
+            loop.forEach((c, i) => buffer.getChannelData(i).set(c));
+
+            if (disposed) {
+                return;
+            }
+
+            engines.forEach((e, i) => {
+                const src = ctx.createBufferSource();
+                const gain = ctx.createGain();
+
+                src.buffer = buffer;
+                src.loop = true;
+                gain.gain.value = 0;
+                src.connect(gain).connect(e.pan);
+                // Моторы — с разных мест петли, иначе звучат как один.
+                src.start(0, (i * buffer.duration) / 2);
+                sampleVoices.push({ src, gain });
+            });
+
+            // Громкость записи — к общему уровню (записи бывают разной громкости), с запасом от перегрузки.
+            sampleNorm = Math.min(6, 0.07 / Math.max(span.rms, 1e-4));
+        } catch {
+            // Не декодировалась — остаётся синтез.
+        }
+    };
+    const sampleUrl = engineSampleUrl();
+
+    if (sampleUrl !== null) {
+        void loadEngineSample(sampleUrl);
+    }
+
     // Поток: шум через полосовой фильтр.
     const windSrc = loopNoise();
     const windFilter = ctx.createBiquadFilter();
@@ -208,15 +255,24 @@ export function createSound(target: Window = window): SoundEngine {
             const now = ctx.currentTime;
             const smooth = 0.08;
 
+            // С записью синтез — тихая подложка (низ и связь с оборотами), без неё — основной звук.
+            const synthMix = sampleNorm > 0 ? 0.25 : 1;
+
             engines.forEach((e, i) => {
                 const engine = view.aircraft.engines[i];
                 const v = engineVoice(engine?.rpm ?? 0, engine?.manifoldInHg ?? 0, station, e.side);
+                const voice = sampleVoices[i];
 
                 e.saw.frequency.setTargetAtTime(v.freq, now, smooth);
                 e.sub.frequency.setTargetAtTime(v.freq / 2, now, smooth);
                 e.lp.frequency.setTargetAtTime(300 + v.freq * 4, now, smooth);
-                e.gain.gain.setTargetAtTime(v.gain * 0.22, now, smooth);
+                e.gain.gain.setTargetAtTime(v.gain * 0.22 * synthMix, now, smooth);
                 e.pan.pan.setTargetAtTime(v.pan, now, smooth);
+
+                if (voice) {
+                    voice.src.playbackRate.setTargetAtTime(samplePlaybackRate(engine?.rpm ?? 0), now, smooth);
+                    voice.gain.gain.setTargetAtTime(v.gain * sampleNorm, now, smooth);
+                }
             });
 
             windGainNode.gain.setTargetAtTime(windGain(view.derived.indicatedAirspeed, station), now, 0.2);
@@ -270,6 +326,8 @@ export function createSound(target: Window = window): SoundEngine {
             apply();
         },
         dispose: () => {
+            disposed = true;
+            sampleVoices.forEach((v) => v.src.stop());
             target.removeEventListener('pointerdown', resume);
             target.removeEventListener('keydown', resume);
             void ctx.close();

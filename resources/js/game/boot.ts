@@ -536,6 +536,10 @@ export async function mountGame(container: HTMLElement, options: GameOptions): P
 
         placeCamera();
         animateModel(dt);
+        // Подвижные пулемёты — по фактическим углам установок (догоняют мышь со скоростью турели, упираются в
+        // ограничители); у клиентов кооператива углы приходят в снапшоте хоста.
+        model.aim(view.mounts);
+        interiors.aim(view.mounts);
         updateFlight(now);
         entities.update(view, dt);
         world.update(camera.position.x, -camera.position.z);

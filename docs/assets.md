@@ -24,6 +24,9 @@
 | resources/sim/theatres/mto-west.json | Рельеф Корсики, юга Франции и севера Италии (грубая береговая линия и хребты) | собственная оцифровка общей географии | проект | — |
 | fonts: Instrument Sans | Шрифт интерфейса (через Bunny Fonts) | Rodrigo Fuenzalida, Jordan Egstad | SIL Open Font License 1.1 | Instrument Sans © The Instrument Sans Project Authors |
 
+Запись двигателей — файл в `resources/audio/engine/` (необязательный, в репозиторий не коммитится, см. README там):
+источник и лицензию — сюда же отдельной строкой; без файла звучит синтез.
+
 Музыка главного меню — файлы в `resources/audio/menu/` (подхватываются автоматически, в репозиторий не коммитятся без строки
 здесь). Только собственные треки или с открытой лицензией (CC0, CC BY с атрибуцией). Рисунок на носу —
 `resources/images/nose-art/` по той же схеме.

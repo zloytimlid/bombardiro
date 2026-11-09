@@ -91,6 +91,12 @@ describe('aircraft model mirroring', () => {
                 expect(box.max.z, name).toBeLessThanOrEqual(dome.position.z + 1e-6);
             }
 
+            // Подвижные пулемёты наружной модели поворачиваются по углам установок.
+            const nose = model.root.getObjectByName('gun_nose_flex')!;
+
+            model.aim([{ id: 'nose_flex', az: 0, el: -Math.PI / 6 }]);
+            expect(new THREE.Vector3(1, 0, 0).applyQuaternion(nose.quaternion).z).toBeCloseTo(Math.sin(Math.PI / 6), 6);
+
             model.dispose();
         } finally {
             g.document = saved;

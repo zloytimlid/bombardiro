@@ -1,7 +1,9 @@
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import b25j from '../../../sim/aircraft/b25j.json';
 import { STATIONS } from '@/sim/core/config';
-import { createCrewInteriors, FUSELAGE_AXIS_Z, POD_WALLS, PODS_FOR_STATION, SHELL_HIDDEN_FROM } from './crewInterior';
+import { mountDirectionBody } from '@/sim/core/guns';
+import { aimRig, createCrewInteriors, FUSELAGE_AXIS_Z, POD_WALLS, PODS_FOR_STATION, SHELL_HIDDEN_FROM } from './crewInterior';
 
 const eyes = b25j.gameplay_station_eyes.value as unknown as Record<string, [number, number, number]>;
 
@@ -58,6 +60,47 @@ describe('crew interiors for first-person views', () => {
 
         interiors.show(null);
         expect(Object.values(interiors.pods).some((p) => p.visible)).toBe(false);
+        interiors.dispose();
+    });
+
+    it('points a gun rig exactly where the sim fires (mountDirectionBody)', () => {
+        const rig = new THREE.Object3D();
+        const deg = Math.PI / 180;
+
+        for (const [az, el] of [
+            [0, 0],
+            [40, 30],
+            [-90, 5],
+            [130, 25],
+            [180, -20],
+            [-60, -30],
+        ] as const) {
+            aimRig(rig, az * deg, el * deg);
+            rig.updateMatrix();
+
+            const barrel = new THREE.Vector3(1, 0, 0).applyQuaternion(rig.quaternion);
+            const sim = mountDirectionBody(az * deg, el * deg);
+
+            expect(barrel.x, `${az}/${el}`).toBeCloseTo(sim.x, 6);
+            expect(barrel.y, `${az}/${el}`).toBeCloseTo(sim.y, 6);
+            expect(barrel.z, `${az}/${el}`).toBeCloseTo(sim.z, 6);
+        }
+    });
+
+    it('turns the turret, waist and tail guns with their mounts', () => {
+        const interiors = createCrewInteriors();
+        const turret = interiors.group.getObjectByName('gun_top_turret')!;
+        const tail = interiors.group.getObjectByName('gun_tail')!;
+
+        // Положение покоя — центр сектора: хвостовые смотрят назад, правый бортовой — вправо.
+        expect(new THREE.Vector3(1, 0, 0).applyQuaternion(tail.quaternion).x).toBeCloseTo(-1, 6);
+        expect(new THREE.Vector3(1, 0, 0).applyQuaternion(interiors.group.getObjectByName('gun_waist_right')!.quaternion).y).toBeCloseTo(1, 6);
+
+        interiors.aim([
+            { id: 'top_turret', az: Math.PI / 2, el: 0 },
+            { id: 'unknown_mount', az: 1, el: 1 },
+        ]);
+        expect(new THREE.Vector3(1, 0, 0).applyQuaternion(turret.quaternion).y).toBeCloseTo(1, 6);
         interiors.dispose();
     });
 });

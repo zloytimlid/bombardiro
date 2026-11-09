@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import type { MountAim } from './crewInterior';
+import { aimRig } from './crewInterior';
 
 /**
  * Модель B-25J (этап 4) — процедурная, без сторонних ассетов: фюзеляж — тело вращения по профилю,
@@ -19,6 +21,8 @@ export type AircraftModel = {
     noseArtSlot: THREE.Mesh;
     /** Подставить рисунок заказчика в слот nose_art (URL картинки с прозрачностью). */
     setNoseArt(url: string | null): void;
+    /** Повернуть подвижные пулемёты (курсовой в носу, верхняя турель) по фактическим углам установок. */
+    aim(mounts: readonly MountAim[]): void;
     dispose(): void;
 };
 
@@ -241,9 +245,28 @@ export function createAircraftModel(markings: AircraftMarkings = DEFAULT_MARKING
         rib.rotation.set(angle, Math.PI / 2, 0);
     }
 
-    const noseGun = mesh(add(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 6)), dark, 7.6, 0.1, fuselageZ + 0.15);
+    // Подвижные пулемёты: узел на оси вращения, стволы вдоль локальной +X (поворот — aimRig, как в симядре).
+    const rigs = new Map<string, THREE.Group>();
+    const gunRig = (mountId: string, pivot: [number, number, number], length: number, radius: number, offsets: number[]): void => {
+        const rig = new THREE.Group();
 
-    noseGun.rotation.z = Math.PI / 2;
+        for (const dy of offsets) {
+            const barrel = new THREE.Mesh(add(new THREE.CylinderGeometry(radius, radius, length, 6)), dark);
+
+            barrel.rotation.z = Math.PI / 2;
+            barrel.position.set(length / 2, dy, 0);
+            barrel.castShadow = true;
+            rig.add(barrel);
+        }
+
+        rig.name = `gun_${mountId}`;
+        rig.position.set(...pivot);
+        root.add(rig);
+        exteriorOnly.push(rig);
+        rigs.set(mountId, rig);
+    };
+
+    gunRig('nose_flex', [7.2, 0.1, fuselageZ + 0.15], 0.9, 0.03, [0]);
 
     // Фонарь кабины пилотов со стойками. Полусфера Three.js — куполом по +Y; в осях FRD +Y — правое крыло, «вверх» —
     // −Z, поэтому купол поворачиваем −90° вокруг X (+Y → −Z). Масштаб — в осях полусферы до поворота: X — длина,
@@ -276,11 +299,7 @@ export function createAircraftModel(markings: AircraftMarkings = DEFAULT_MARKING
     turret.name = 'top_turret';
     turret.rotation.x = -Math.PI / 2;
 
-    for (const side of [-0.12, 0.12]) {
-        const barrel = mesh(add(new THREE.CylinderGeometry(0.025, 0.025, 1.1, 6)), dark, 2.4, side, -1.15);
-
-        barrel.rotation.z = Math.PI / 2;
-    }
+    gunRig('top_turret', [1.9, 0, -1.15], 1.1, 0.025, [-0.12, 0.12]);
 
     mesh(add(bodyOfRevolution([[-8.75, 0.01], [-8.6, 0.28], [-8.1, 0.36], [-7.6, 0.38]], 14)), glass, 0, 0, -0.05);
 
@@ -448,6 +467,15 @@ export function createAircraftModel(markings: AircraftMarkings = DEFAULT_MARKING
         gear,
         exteriorOnly,
         noseArtSlot,
+        aim: (mounts) => {
+            for (const m of mounts) {
+                const rig = rigs.get(m.id);
+
+                if (rig) {
+                    aimRig(rig, m.az, m.el);
+                }
+            }
+        },
         setNoseArt: (url) => {
             noseArtTexture?.dispose();
             noseArtTexture = null;

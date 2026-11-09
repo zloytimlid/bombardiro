@@ -108,7 +108,20 @@ function closedRanges(open: [number, number][]): [number, number][] {
     return out;
 }
 
-export function createCrewInteriors(): { group: THREE.Group; pods: Record<PodName, THREE.Group>; show(station: Station | null): void; dispose(): void } {
+/** Поворот узла установки: азимут вокруг Z (вправо +), угол места вокруг Y (вверх +) — как mountDirectionBody. */
+export function aimRig(rig: THREE.Object3D, az: number, el: number): void {
+    rig.rotation.set(0, el, az, 'ZYX');
+}
+
+export type MountAim = { id: string; az: number; el: number };
+
+export function createCrewInteriors(): {
+    group: THREE.Group;
+    pods: Record<PodName, THREE.Group>;
+    show(station: Station | null): void;
+    aim(mounts: readonly MountAim[]): void;
+    dispose(): void;
+} {
     const group = new THREE.Group();
     const disposables: { dispose(): void }[] = [];
     const lambert = (color: number, extra: THREE.MeshLambertMaterialParameters = {}): THREE.Material => {
@@ -225,18 +238,33 @@ export function createCrewInteriors(): { group: THREE.Group; pods: Record<PodNam
         box(parent, 0.45, 0.45, 0.08, mat.seat, x, y, z);
         box(parent, 0.08, 0.45, 0.55, mat.seat, x - dir * 0.24, y, z - 0.3);
     };
-    /** Пулемёт .50: ствол с кожухом и казённик; направление — единичный вектор. */
-    const gun = (parent: THREE.Group, x: number, y: number, z: number, dir: THREE.Vector3, length = 1.1): void => {
-        const g = new THREE.Group();
-        const barrel = new THREE.Mesh(geo(new THREE.CylinderGeometry(0.025, 0.03, length, 8)), mat.metal);
-        const breech = new THREE.Mesh(geo(new THREE.BoxGeometry(0.1, 0.3, 0.12)), mat.metal);
+    /** Подвижные установки по id из gameplay_mounts: узел поворачивается по фактическим углам установки. */
+    const rigs = new Map<string, THREE.Group>();
 
-        barrel.position.y = length / 2 + 0.2;
-        breech.position.y = 0;
-        g.add(barrel, breech);
-        g.position.set(x, y, z);
-        g.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-        parent.add(g);
+    /**
+     * Пулемёт(ы) .50 на подвижной установке: узел на оси вращения `pivot`, стволы вдоль локальной +X со смещениями
+     * `offsets` (спаренные — по y), казённик у оси. Положение покоя — центр сектора установки.
+     */
+    const gunRig = (parent: THREE.Group, mountId: string, pivot: [number, number, number], length: number, offsets: [number, number][], restAz = 0): THREE.Group => {
+        const rig = new THREE.Group();
+
+        for (const [dy, dz] of offsets) {
+            const barrel = new THREE.Mesh(geo(new THREE.CylinderGeometry(0.025, 0.03, length, 8)), mat.metal);
+            const breech = new THREE.Mesh(geo(new THREE.BoxGeometry(0.3, 0.1, 0.12)), mat.metal);
+
+            barrel.rotation.z = -Math.PI / 2;
+            barrel.position.set(0.2 + length / 2, dy, dz);
+            breech.position.set(0, dy, dz);
+            rig.add(barrel, breech);
+        }
+
+        rig.name = `gun_${mountId}`;
+        rig.position.set(...pivot);
+        aimRig(rig, restAz, 0);
+        parent.add(rig);
+        rigs.set(mountId, rig);
+
+        return rig;
     };
 
     // ── Кабина пилотов.
@@ -317,8 +345,8 @@ export function createCrewInteriors(): { group: THREE.Group; pods: Record<PodNam
         cylinderZ(p, 0.025, 0.1, mat.metal, 7.24, 0, 0.17);
         box(p, 0.12, 0.3, 0.06, mat.frame, 7.15, 0, 0.34);
         seat(p, 6.75, 0, 0.24);
-        // Курсовой пулемёт справа впереди: казённик внутри, ствол — наружу через остекление.
-        gun(p, 7.22, 0.16, 0.02, new THREE.Vector3(1, 0, 0), 0.35);
+        // Курсовой подвижный пулемёт — ствол наружной модели (бомбардир под остеклением, она ему видна); казённик в
+        // отсеке не ставим: он оказывался в 15 см от глаза и закрывал полэкрана.
         // Переборка за спиной с проходом и стойка с бомбосбрасывателем.
         bulkhead(p, 6.35, 0.62, 0.28);
         box(p, 0.08, 0.14, 0.3, mat.frame, 6.5, -0.42, 0.05);
@@ -332,13 +360,14 @@ export function createCrewInteriors(): { group: THREE.Group; pods: Record<PodNam
         ring.position.set(1.9, 0, -0.92);
         p.add(ring);
 
-        for (const y of [-0.24, 0.24]) {
-            gun(p, 1.9, y, -1.02, new THREE.Vector3(1, 0, 0), 0.9);
-        }
+        // Спаренные пулемёты, прицел и рукоятки поворачиваются вместе с турелью вокруг её центра.
+        const turret = gunRig(p, 'top_turret', [1.9, 0, -1.02], 0.9, [
+            [-0.24, 0],
+            [0.24, 0],
+        ]);
 
-        // Прицел перед глазом (чуть ниже линии взгляда) и рукоятки.
-        box(p, 0.04, 0.03, 0.04, mat.metal, 2.2, 0, -1.15);
-        box(p, 0.05, 0.42, 0.04, mat.frame, 2.08, 0, -0.95);
+        box(turret, 0.04, 0.03, 0.04, mat.metal, 0.3, 0, -0.13);
+        box(turret, 0.05, 0.42, 0.04, mat.frame, 0.18, 0, 0.07);
         seat(p, 1.7, 0, -0.55);
         // Рёбра купола изнутри.
         for (const a of [0, Math.PI / 2]) {
@@ -359,8 +388,8 @@ export function createCrewInteriors(): { group: THREE.Group; pods: Record<PodNam
         bulkhead(p, -2.4, 0.72, 0.3);
         bulkhead(p, -5.0, 0.66, 0.25);
         // Бортовые пулемёты в окнах — стволами наружу.
-        gun(p, -3.35, 0.52, -0.18, new THREE.Vector3(0, 1, 0), 0.9);
-        gun(p, -3.35, -0.52, -0.18, new THREE.Vector3(0, -1, 0), 0.9);
+        gunRig(p, 'waist_right', [-3.35, 0.52, -0.18], 0.9, [[0, 0]], Math.PI / 2);
+        gunRig(p, 'waist_left', [-3.35, -0.52, -0.18], 0.9, [[0, 0]], -Math.PI / 2);
         // Ящики с лентами.
         box(p, 0.3, 0.22, 0.25, mat.frame, -3.95, 0.38, 0.22);
         box(p, 0.3, 0.22, 0.25, mat.frame, -3.95, -0.38, 0.22);
@@ -385,17 +414,28 @@ export function createCrewInteriors(): { group: THREE.Group; pods: Record<PodNam
         box(p, 0.8, 0.5, 0.04, mat.floor, -8.0, 0, 0.18);
 
         // Спаренные пулемёты — стволами назад.
-        for (const y of [-0.1, 0.1]) {
-            gun(p, -8.6, y, 0.0, new THREE.Vector3(-1, 0, 0), 0.8);
-        }
+        // Спаренные хвостовые пулемёты с прицелом — на одной установке.
+        const tail = gunRig(p, 'tail', [-8.6, 0, 0], 0.8, [
+            [-0.1, 0],
+            [0.1, 0],
+        ], Math.PI);
 
-        box(p, 0.06, 0.05, 0.06, mat.metal, -8.7, 0, -0.16);
+        box(tail, 0.06, 0.05, 0.06, mat.metal, 0.1, 0, -0.16);
         seat(p, -8.1, 0, 0.1, -1);
     }
 
     return {
         group,
         pods,
+        aim: (mounts) => {
+            for (const m of mounts) {
+                const rig = rigs.get(m.id);
+
+                if (rig) {
+                    aimRig(rig, m.az, m.el);
+                }
+            }
+        },
         show: (station) => {
             const visible = new Set(station === null ? [] : PODS_FOR_STATION[station]);
 
